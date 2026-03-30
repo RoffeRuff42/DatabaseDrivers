@@ -1,4 +1,5 @@
 
+using Scalar.AspNetCore;
 namespace DatabaseDrivers
 {
     public class Program
@@ -19,6 +20,7 @@ namespace DatabaseDrivers
             if (app.Environment.IsDevelopment())
             {
                 app.MapOpenApi();
+                app.MapScalarApiReference();
             }
 
             app.UseHttpsRedirection();

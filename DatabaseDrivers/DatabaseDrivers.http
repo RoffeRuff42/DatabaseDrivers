@@ -1,6 +1,0 @@
-@DatabaseDrivers_HostAddress = http://localhost:5269
-
-GET {{DatabaseDrivers_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

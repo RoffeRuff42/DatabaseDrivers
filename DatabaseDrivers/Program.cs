@@ -27,7 +27,7 @@ namespace DatabaseDrivers
                     config.QueueLimit = 2;
                 });
                 //ADD THIS TO CONTROLLER
-                //[EnableRateLimiting("fixed")]
+                //[EnableRateLimiting("sliding")]
             });
 
             var app = builder.Build();

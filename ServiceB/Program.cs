@@ -20,7 +20,7 @@ builder.Services.AddRateLimiter(options =>
         config.QueueLimit = 2;
     });
     //ADD THIS TO CONTROLLER
-    //[EnableRateLimiting("fixed")]
+    //[EnableRateLimiting("sliding")]
 });
 
 builder.Services.AddOpenApi();

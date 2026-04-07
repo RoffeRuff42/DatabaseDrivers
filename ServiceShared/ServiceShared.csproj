@@ -10,6 +10,8 @@
     <Folder Include="SharedExtensions\" />
     <Folder Include="SharedExceptions\" />
     <Folder Include="SharedDTOs\" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.13" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.13.17" />
   </ItemGroup>
 
 </Project>

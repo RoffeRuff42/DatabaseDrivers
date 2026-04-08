@@ -22,9 +22,7 @@
     <Folder Include="Models\" />
     <Folder Include="Services\" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\ServiceShared\ServiceShared.csproj" />
   </ItemGroup>
-
 </Project>

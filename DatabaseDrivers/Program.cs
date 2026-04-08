@@ -1,4 +1,4 @@
-
+using Microsoft.AspNetCore.RateLimiting;
 using Scalar.AspNetCore;
 namespace DatabaseDrivers
 {
@@ -14,6 +14,22 @@ namespace DatabaseDrivers
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
 
+            //Ratelimiting
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+                options.AddSlidingWindowLimiter("sliding", config =>
+                {
+                    config.Window = TimeSpan.FromMinutes(1);
+                    config.SegmentsPerWindow = 6;
+                    config.PermitLimit = 100;
+                    config.QueueLimit = 2;
+                });
+                //ADD THIS TO CONTROLLER
+                //[EnableRateLimiting("sliding")]
+            });
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -25,8 +41,9 @@ namespace DatabaseDrivers
 
             app.UseHttpsRedirection();
 
-            app.UseAuthorization();
+            app.UseRateLimiter();
 
+            app.UseAuthorization();
 
             app.MapControllers();
 

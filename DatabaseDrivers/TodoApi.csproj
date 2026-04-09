@@ -4,6 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>a177053b-98d6-4eae-a693-51275ec3b2b9</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,7 +12,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Clients\" />
     <Folder Include="Controllers\" />
     <Folder Include="Data\" />
     <Folder Include="DTOs\" />

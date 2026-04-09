@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.RateLimiting;
 using Scalar.AspNetCore;
+using TodoApi.Clients;
 namespace DatabaseDrivers
 {
     public class Program
@@ -13,6 +14,9 @@ namespace DatabaseDrivers
             builder.Services.AddControllers();
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
+
+            // Register the Typed Client for external API calls
+            builder.Services.AddHttpClient<ExternalApiClient>();
 
             //Ratelimiting
             builder.Services.AddRateLimiter(options =>

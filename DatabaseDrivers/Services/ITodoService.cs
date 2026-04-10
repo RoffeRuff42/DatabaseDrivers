@@ -1,6 +1,7 @@
 ﻿namespace TodoApi.Services
 {
-    public class ITodoService
+    public interface ITodoService
     {
+
     }
 }

@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Caching.Memory;
 using TodoApi.DTOs;
 using TodoApi.Services; 
 
@@ -6,13 +8,18 @@ namespace TodoApi.Controllers
 {
     [ApiController]
     [Route("api/v1/todos")]
+    [EnableRateLimiting("sliding")]
     public class TodosController : ControllerBase
     {
         private readonly ITodoService _service;
+        private readonly IMemoryCache _cache;
 
-        public TodosController(ITodoService service)
+
+        public TodosController(ITodoService service, IMemoryCache cache)
         {
             _service = service;
+            _cache = cache;
+
         }
 
         /// <summary>
@@ -21,20 +28,43 @@ namespace TodoApi.Controllers
         [HttpGet]
         public IActionResult GetTodos()
         {
-            var todos = _service.GetAll();
-            return Ok(todos); 
+            const string cacheKey = "todos_all";
+
+            if (!_cache.TryGetValue(cacheKey, out var todos))
+            {
+                todos = _service.GetAll();
+
+                var cacheOptions = new MemoryCacheEntryOptions()
+                    .SetAbsoluteExpiration(TimeSpan.FromMinutes(5))
+                    .SetSlidingExpiration(TimeSpan.FromMinutes(2));
+
+                _cache.Set(cacheKey, todos, cacheOptions);
+            }
+
+            return Ok(todos);
         }
 
         
         [HttpGet("{id}")]
         public IActionResult GetTodo(int id)
         {
-            var todo = _service.GetById(id);
+            string cacheKey = $"todo_{id}";
 
-            if (todo == null)
-                return NotFound(); 
+            if (!_cache.TryGetValue(cacheKey, out var todo))
+            {
+                todo = _service.GetById(id);
 
-            return Ok(todo); 
+                if (todo == null)
+                    return NotFound();
+
+                var cacheOptions = new MemoryCacheEntryOptions()
+                    .SetAbsoluteExpiration(TimeSpan.FromMinutes(5))
+                    .SetSlidingExpiration(TimeSpan.FromMinutes(2));
+
+                _cache.Set(cacheKey, todo, cacheOptions);
+            }
+
+            return Ok(todo);
         }
 
         /// <summary>
@@ -56,7 +86,7 @@ namespace TodoApi.Controllers
         [HttpPut("{id}")]
         public IActionResult UpdateTodo(int id, UpdateTodoDto dto)
         {
-            var updated = _service.Update(id, dto);
+            var updated = _service.UpdateTodo(id, dto);
 
             if (!updated)
                 return NotFound(); 
@@ -68,7 +98,7 @@ namespace TodoApi.Controllers
         [HttpDelete("{id}")]
         public IActionResult DeleteTodo(int id)
         {
-            var deleted = _service.Delete(id);
+            var deleted = _service.DeleteTodo(id);
 
             if (!deleted)
                 return NotFound(); 

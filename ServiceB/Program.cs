@@ -22,6 +22,9 @@ builder.Services.AddRateLimiter(options =>
     //ADD THIS TO CONTROLLER
     //[EnableRateLimiting("sliding")]
 });
+//Hejhej ta bort denna rad senare
+
+
 
 builder.Services.AddOpenApi();
 

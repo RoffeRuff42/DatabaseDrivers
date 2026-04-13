@@ -24,7 +24,7 @@ namespace DatabaseDrivers
             }
 
             app.UseHttpsRedirection();
-
+       
             app.UseAuthorization();
 
 

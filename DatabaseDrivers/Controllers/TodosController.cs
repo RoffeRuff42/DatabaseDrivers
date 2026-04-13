@@ -37,7 +37,9 @@ namespace TodoApi.Controllers
             return Ok(todo); 
         }
 
-      
+        /// <summary>
+        /// Skapar en ny todo
+        /// </summary>
         [HttpPost]
         public IActionResult CreateTodo(CreateTodoDto dto)
         {

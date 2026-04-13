@@ -69,8 +69,8 @@ namespace DatabaseDrivers
             }
 
             app.UseHttpsRedirection();
-
-            app.UseRateLimiter();
+       
+            app.UseAuthorization();
 
             app.UseAuthorization();
 

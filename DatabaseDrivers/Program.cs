@@ -1,5 +1,7 @@
-
+using Microsoft.AspNetCore.RateLimiting;
 using Scalar.AspNetCore;
+using TodoApi.Clients;
+using TodoApi.Services;
 namespace DatabaseDrivers
 {
     public class Program
@@ -14,6 +16,49 @@ namespace DatabaseDrivers
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
 
+            builder.Services.AddHttpClient<IUserApiClient, UserApiClient>(client =>
+            {
+                var baseUrl = builder.Configuration["Services:UserApi"] ?? throw new InvalidOperationException("User API base URL is not configured.");
+                client.BaseAddress = new Uri(baseUrl);
+                client.Timeout = TimeSpan.FromSeconds(30);
+            })
+            .AddStandardResilienceHandler(options =>
+            {
+                options.Retry.MaxRetryAttempts = 2;
+                options.Retry.Delay = TimeSpan.FromSeconds(1);
+                options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
+            });
+
+            //change to right url and client name in appsettings after decision
+            builder.Services.AddHttpClient<IExternalApiClient, ExternalApiClient>(client =>
+            {
+                var baseUrl = builder.Configuration["Services:ExternalApi"] ?? throw new InvalidOperationException("External API base URL is not configured.");
+                client.BaseAddress = new Uri(baseUrl);
+                client.Timeout = TimeSpan.FromSeconds(30);
+            })
+            .AddStandardResilienceHandler(options =>
+            {
+                options.Retry.MaxRetryAttempts = 3;
+                options.Retry.Delay = TimeSpan.FromSeconds(2);
+                options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
+            });
+
+            //Ratelimiting
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+                options.AddSlidingWindowLimiter("sliding", config =>
+                {
+                    config.Window = TimeSpan.FromMinutes(1);
+                    config.SegmentsPerWindow = 6;
+                    config.PermitLimit = 100;
+                    config.QueueLimit = 2;
+                });
+                //ADD THIS TO CONTROLLER
+                //[EnableRateLimiting("sliding")]
+            });
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -27,6 +72,7 @@ namespace DatabaseDrivers
        
             app.UseAuthorization();
 
+            app.UseAuthorization();
 
             app.MapControllers();
 

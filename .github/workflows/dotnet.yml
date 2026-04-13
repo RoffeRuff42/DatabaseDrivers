@@ -5,9 +5,9 @@ name: .NET
 
 on:
   push:
-    branches: [ "main, dev" ]
+    branches: [ "main", "dev" ]
   pull_request:
-    branches: [ "main, dev" ]
+    branches: [ "main", "dev" ]
 
 jobs:
   build:
@@ -20,7 +20,7 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.x
-        cache: true
+        #cache: true
     - name: Restore dependencies
       run: dotnet restore
     - name: Build

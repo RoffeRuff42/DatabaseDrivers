@@ -42,7 +42,8 @@ namespace DatabaseDrivers
                 options.Retry.Delay = TimeSpan.FromSeconds(2);
                 options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
             });
-
+            //Cache
+            builder.Services.AddMemoryCache();
             //Ratelimiting
             builder.Services.AddRateLimiter(options =>
             {

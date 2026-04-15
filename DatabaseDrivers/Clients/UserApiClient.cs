@@ -1,7 +1,4 @@
-﻿using System.Net.Http.Json;
-using ServiceShared.DTOs;
-
-namespace TodoApi.Clients
+﻿namespace TodoApi.Clients
 {
     public class UserApiClient : IUserApiClient
     {

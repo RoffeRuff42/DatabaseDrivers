@@ -26,25 +26,24 @@ namespace TodoApi.Controllers
         /// Hämtar alla todos
         /// </summary>
         [HttpGet]
-        public IActionResult GetTodos()
+        public IActionResult GetTodos(int page = 1, int pageSize = 10, string? search = null)
         {
-            const string cacheKey = "todos_all";
 
-            if (!_cache.TryGetValue(cacheKey, out var todos))
+            var cacheKey = $"todos_{page}_{pageSize}_{search}";
+
+            if (!_cache.TryGetValue(cacheKey, out List<TodoResponseDto> todos))
             {
-                todos = _service.GetAll();
+
+                todos = _service.GetAll(page, pageSize, search);
 
                 var cacheOptions = new MemoryCacheEntryOptions()
                     .SetAbsoluteExpiration(TimeSpan.FromMinutes(5))
                     .SetSlidingExpiration(TimeSpan.FromMinutes(2));
-
                 _cache.Set(cacheKey, todos, cacheOptions);
             }
-
             return Ok(todos);
         }
 
-        
         [HttpGet("{id}")]
         public IActionResult GetTodo(int id)
         {

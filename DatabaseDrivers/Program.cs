@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.RateLimiting;
 using Scalar.AspNetCore;
 using TodoApi.Clients;
 using TodoApi.Services;
+using Microsoft.Extensions.Http.Resilience;
+
 namespace DatabaseDrivers
 {
     public class Program

@@ -25,21 +25,21 @@ namespace TodoApi.Clients
             }
         }
 
-        public async Task<UserLoginDto> UserLoginAsync(string username, string password)
-        {
-            try
-            {
-                var loginData = new { Username = username, Password = password };
-                var response = await _httpClient.PostAsJsonAsync("/api/auth/login", loginData);
-                response.EnsureSuccessStatusCode();
-                return await response.Content.ReadFromJsonAsync<UserLoginDto>();
-            }
-            catch (HttpRequestException ex)
-            {
-                // Log the error for debugging purposes
-                _logger.LogError(ex, $"[UserApiClient Error]: Failed to login user {username}");
-                throw;
-            }
-        }
+        //public async Task<UserLoginDto> UserLoginAsync(string username, string password)
+        //{
+        //    try
+        //    {
+        //        var loginData = new { Username = username, Password = password };
+        //        var response = await _httpClient.PostAsJsonAsync("/api/auth/login", loginData);
+        //        response.EnsureSuccessStatusCode();
+        //        return await response.Content.ReadFromJsonAsync<UserLoginDto>();
+        //    }
+        //    catch (HttpRequestException ex)
+        //    {
+        //        // Log the error for debugging purposes
+        //        _logger.LogError(ex, $"[UserApiClient Error]: Failed to login user {username}");
+        //        throw;
+        //    }
+        //}
     }
 }

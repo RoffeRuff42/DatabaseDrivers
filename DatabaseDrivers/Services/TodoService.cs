@@ -19,10 +19,16 @@ namespace TodoApi.Services
 
         public async Task<List<TodoResponseDto>> GetAllAsync(int page, int pageSize, string? search, string ticketId)
         {
-            try
+            //Validate the ticket before fetching the todo item
+            var userTicket = await _userApiClient.ValidateTicketAsync(ticketId);
+            if (userTicket == null)
             {
-                var userTicket = await _userApiClient.ValidateTicketAsync(ticketId);
+                throw new UnauthorizedAccessException("Invalid session."); // Return invalid session error if the ticket is not valid
             }
+
+            //Get randomquote from external API to demonstrate usage of external API client
+            var randomQuote = await _externalApiClient.GetTestDataAsync("random-quote");
+
             var query = _todos.AsQueryable();
 
             if (!string.IsNullOrEmpty(search))
@@ -45,9 +51,6 @@ namespace TodoApi.Services
                 throw new UnauthorizedAccessException("Invalid session."); // Return invalid session error if the ticket is not valid
             }
 
-            //Get randomquote from external API to demonstrate usage of external API client
-            var randomQuote = await _externalApiClient.GetTestDataAsync("random-quote");
-
             return _todos.FirstOrDefault(t => t.Id == id);
         }
 
@@ -67,7 +70,7 @@ namespace TodoApi.Services
             {
                 Id = _nextId++,
                 Title = dto.Title,
-                IsDone = false
+                IsDone = false,
                 UserId = userTicket.UserId // Associate the todo item with the user ID from the validated ticket
             };
 
@@ -76,6 +79,13 @@ namespace TodoApi.Services
         }
         public async Task<bool> UpdateTodoAsync(int id, UpdateTodoDto updateTodoDto, string ticketId)
         {
+            //Validate the ticket before fetching the todo item
+            var userTicket = await _userApiClient.ValidateTicketAsync(ticketId);
+            if (userTicket == null)
+            {
+                throw new UnauthorizedAccessException("Invalid session."); // Return invalid session error if the ticket is not valid
+            }
+
             var todo = _todos.FirstOrDefault(t => t.Id == id);
 
             if (todo == null)
@@ -88,6 +98,13 @@ namespace TodoApi.Services
         }
         public async Task<bool> DeleteTodoAsync(int id, string ticketId)
         {
+            //Validate the ticket before fetching the todo item
+            var userTicket = await _userApiClient.ValidateTicketAsync(ticketId);
+            if (userTicket == null)
+            {
+                throw new UnauthorizedAccessException("Invalid session."); // Return invalid session error if the ticket is not valid
+            }
+
             var todo = _todos.FirstOrDefault(t => t.Id == id);
 
             if (todo == null)

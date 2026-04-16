@@ -82,8 +82,6 @@ namespace DatabaseDrivers
        
             app.UseAuthorization();
 
-            app.UseAuthorization();
-
             app.MapControllers();
 
             app.Run();

@@ -6,6 +6,6 @@ namespace TodoApi.DTOs
     {
         [Required]
         [StringLength(100)]
-        public string Title { get; set; }
+        public string Title { get; set; } 
     }
 }

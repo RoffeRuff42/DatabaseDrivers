@@ -22,6 +22,14 @@ namespace DatabaseDrivers
                 client.BaseAddress = new Uri("https://zenquotes.io/");
             });
 
+            // Adds standardized error responses (ProblemDetails)
+            builder.Services.AddProblemDetails(options => {
+                options.CustomizeProblemDetails = context =>
+                {
+                    context.ProblemDetails.Instance = context.HttpContext.Request.Path; // Include the request path in the error response
+                };
+            });
+
             builder.Services.AddHttpClient<IUserApiClient, UserApiClient>(client =>
             {
                 var baseUrl = builder.Configuration["Services:UserApi"] ?? throw new InvalidOperationException("User API base URL is not configured.");
@@ -77,8 +85,6 @@ namespace DatabaseDrivers
 
             app.UseHttpsRedirection();
             app.UseRateLimiter();
-
-            app.UseAuthorization();
 
             app.MapControllers();
 

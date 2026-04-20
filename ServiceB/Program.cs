@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.RateLimiting;
+using UserApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +23,8 @@ builder.Services.AddRateLimiter(options =>
     //ADD THIS TO CONTROLLER
     //[EnableRateLimiting("sliding")]
 });
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<IUserAuthService, UserAuthService>();
 
 builder.Services.AddOpenApi();
 

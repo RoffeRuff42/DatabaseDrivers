@@ -31,7 +31,7 @@ namespace TodoApi.Controllers
 
             var cacheKey = $"todos_{page}_{pageSize}_{search}";
 
-            if (!_cache.TryGetValue(cacheKey, out List<TodoResponseDto> todos))
+            if (!_cache.TryGetValue(cacheKey, out List<TodoResponseDto>?todos))
             {
 
                 todos = _service.GetAll(page, pageSize, search);

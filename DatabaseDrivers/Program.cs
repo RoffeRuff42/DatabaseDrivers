@@ -17,6 +17,11 @@ namespace DatabaseDrivers
             builder.Services.AddControllers();
             builder.Services.AddOpenApi();
 
+            builder.Services.AddHttpClient<IQuoteService, QuoteService>(client =>
+            {
+                client.BaseAddress = new Uri("https://zenquotes.io/");
+            });
+
             builder.Services.AddHttpClient<IUserApiClient, UserApiClient>(client =>
             {
                 var baseUrl = builder.Configuration["Services:UserApi"] ?? throw new InvalidOperationException("User API base URL is not configured.");
@@ -71,8 +76,7 @@ namespace DatabaseDrivers
             }
 
             app.UseHttpsRedirection();
-       
-            app.UseAuthorization();
+            app.UseRateLimiter();
 
             app.UseAuthorization();
 

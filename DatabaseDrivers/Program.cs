@@ -23,6 +23,11 @@ namespace DatabaseDrivers
             builder.Services.AddControllers();
             builder.Services.AddOpenApi();
 
+            builder.Services.AddHttpClient<IQuoteService, QuoteService>(client =>
+            {
+                client.BaseAddress = new Uri("https://zenquotes.io/");
+            });
+
             // Adds standardized error responses (ProblemDetails)
             builder.Services.AddProblemDetails(options => {
                 options.CustomizeProblemDetails = context =>
@@ -85,8 +90,7 @@ namespace DatabaseDrivers
             }
 
             app.UseHttpsRedirection();
-       
-            app.UseAuthorization();
+            app.UseRateLimiter();
 
             app.MapControllers();
 

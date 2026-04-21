@@ -88,7 +88,11 @@ namespace DatabaseDrivers
                 app.MapOpenApi();
                 app.MapScalarApiReference();
             }
-
+            using (var scope = app.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<TodoDbContext>();
+                db.Database.EnsureCreated();
+            }
             app.UseHttpsRedirection();
             app.UseRateLimiter();
 

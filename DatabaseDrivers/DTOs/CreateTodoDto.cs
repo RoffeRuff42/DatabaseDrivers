@@ -6,9 +6,9 @@ namespace TodoApi.DTOs
     {
         [Required]
         [StringLength(100)]
-        public string Title { get; set; } 
+        public required string Title { get; set; } 
 
         [Required]
-        public string TicketId { get; set; }
+        public required string TicketId { get; set; }
     }
 }

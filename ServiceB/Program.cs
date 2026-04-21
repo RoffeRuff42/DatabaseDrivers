@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.RateLimiting;
+using Scalar.AspNetCore;
+using UserApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +24,8 @@ builder.Services.AddRateLimiter(options =>
     //ADD THIS TO CONTROLLER
     //[EnableRateLimiting("sliding")]
 });
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<IUserAuthService, UserAuthService>();
 
 builder.Services.AddOpenApi();
 
@@ -31,6 +35,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapScalarApiReference();
 }
 
 app.UseHttpsRedirection();

@@ -1,119 +1,148 @@
 ﻿using System.Threading.Tasks;
 using TodoApi.Clients;
 using TodoApi.DTOs;
+using Microsoft.EntityFrameworkCore;
+using TodoApi.Data;
+using TodoApi.Models;
 
 namespace TodoApi.Services
 {
     public class TodoService : ITodoService
     {
-        private static readonly List<TodoResponseDto> _todos = new(); // In-memory list used to store all todos (acts as a temporary data store instead of a database)
-        private static int _nextId = 1;  // Counter used to generate unique IDs for each todo 
-        private readonly IUserApiClient _userApiClient; // Dependency on an internal user API client to fetch user information
-        private readonly IExternalApiClient _externalApiClient; // Dependency on an external API client to fetch additional data
+        private readonly TodoDbContext _context; // Our new connection to the database
+        private readonly IUserApiClient _userApiClient;
+        private readonly IExternalApiClient _externalApiClient;
 
-        public TodoService(IUserApiClient userApiClient, IExternalApiClient externalApiClient)
+        public TodoService(TodoDbContext context, IUserApiClient userApiClient, IExternalApiClient externalApiClient)
         {
+            _context = context; // Assign the injected context
             _userApiClient = userApiClient;
             _externalApiClient = externalApiClient;
         }
 
         public async Task<List<TodoResponseDto>> GetAllAsync(int page, int pageSize, string? search, string ticketId)
         {
-            //Validate the ticket before fetching the todo item
+            // Validate the ticket with the User API before querying the database
             var userTicket = await _userApiClient.ValidateTicketAsync(ticketId);
             if (userTicket == null)
             {
-                throw new UnauthorizedAccessException("Invalid session."); // Return invalid session error if the ticket is not valid
+                throw new UnauthorizedAccessException("Invalid session.");
             }
 
-            //Get randomquote from external API to demonstrate usage of external API client
-            var randomQuote = await _externalApiClient.GetTestDataAsync("random-quote");
+            // Start with the base queryable for the Todos table
+            var query = _context.Todos.Where(t => t.UserId == userTicket.UserId);
 
-            var query = _todos.AsQueryable();
-
+            // Filter by UserId from the validated ticket to ensure users only see their own todos
             if (!string.IsNullOrEmpty(search))
             {
                 query = query.Where(t => t.Title.ToLower().Contains(search.ToLower()));
             }
 
-            return query
+            // Apply pagination and project to DTOs, including the UserId from the validated ticket
+            return await query
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .ToList();
+                .Select(t => new TodoResponseDto
+                {
+                    Id = t.Id,
+                    Title = t.Title,
+                    IsDone = t.IsDone,
+                    UserId = userTicket.UserId
+                })
+                .ToListAsync();
         }
 
         public async Task<TodoResponseDto?> GetByIdAsync(int id, string ticketId)
         {
-            //Validate the ticket before fetching the todo item
+            // Validate the ticket with the User API before fetching the specific todo item
             var userTicket = await _userApiClient.ValidateTicketAsync(ticketId);
-            if (userTicket == null)
-            {
-                throw new UnauthorizedAccessException("Invalid session."); // Return invalid session error if the ticket is not valid
-            }
+            if (userTicket == null) throw new UnauthorizedAccessException("Invalid session.");
 
-            return _todos.FirstOrDefault(t => t.Id == id);
+            // Fetch the todo item from the database by ID, ensuring it belongs to the user from the validated ticket
+            var todo = await _context.Todos.FirstOrDefaultAsync(t => t.Id == id && t.UserId == userTicket.UserId);
+            if (todo == null) return null;
+
+            // Return a response DTO that includes the UserId from the validated ticket
+            return new TodoResponseDto
+            {
+                Id = todo.Id,
+                Title = todo.Title,
+                IsDone = todo.IsDone,
+                UserId = todo.UserId
+            };
         }
 
         public async Task<TodoResponseDto?> CreateTodoAsync(CreateTodoDto dto, string ticketId)
         {
-            //Validate the ticket before fetching the todo item
+            // Validate the ticket with the User API before creating a new todo
             var userTicket = await _userApiClient.ValidateTicketAsync(ticketId);
             if (userTicket == null)
             {
-                throw new UnauthorizedAccessException("Invalid session."); // Return invalid session error if the ticket is not valid
+                throw new UnauthorizedAccessException("Invalid session.");
             }
 
-            //Get randomquote from external API to demonstrate usage of external API client
+            // Optional: Get data from external API if needed
             var randomQuote = await _externalApiClient.GetTestDataAsync("random-quote");
 
-            var todo = new TodoResponseDto
+            // Map the incoming DTO to a new Todo model object
+            var todo = new Todo
             {
-                Id = _nextId++,
                 Title = dto.Title,
                 IsDone = false,
-                UserId = userTicket.UserId // Associate the todo item with the user ID from the validated ticket
+                UserId = userTicket.UserId
             };
 
-            _todos.Add(todo);
-            return todo;
+            // Add the new Todo to the database context
+            _context.Todos.Add(todo);
+
+            // Save changes to the database, which will generate an ID for the new Todo
+            await _context.SaveChangesAsync();
+
+            // Return a response DTO that includes the new ID and the UserId from the validated ticket
+            return new TodoResponseDto
+            {
+                Id = todo.Id, // This ID was just generated by the database
+                Title = todo.Title,
+                IsDone = todo.IsDone,
+                UserId = userTicket.UserId
+            };
         }
+
         public async Task<bool> UpdateTodoAsync(int id, UpdateTodoDto updateTodoDto, string ticketId)
         {
-            //Validate the ticket before fetching the todo item
+            // Validate the ticket with the User API before updating the todo item
             var userTicket = await _userApiClient.ValidateTicketAsync(ticketId);
-            if (userTicket == null)
-            {
-                throw new UnauthorizedAccessException("Invalid session."); // Return invalid session error if the ticket is not valid
-            }
+            if (userTicket == null) throw new UnauthorizedAccessException("Invalid session.");
 
-            var todo = _todos.FirstOrDefault(t => t.Id == id);
+            // Fetch the existing todo item from the database by ID
+            var todo = await _context.Todos.FirstOrDefaultAsync(t => t.Id == id && t.UserId == userTicket.UserId);
 
-            if (todo == null)
-                return false;
+            if (todo == null) return false;
 
+            // Update the properties of the existing todo item with the values from the incoming DTO
             todo.Title = updateTodoDto.Title;
             todo.IsDone = updateTodoDto.IsDone;
 
+            await _context.SaveChangesAsync();
             return true;
         }
+
         public async Task<bool> DeleteTodoAsync(int id, string ticketId)
         {
-            //Validate the ticket before fetching the todo item
+            // Validate the ticket with the User API before deleting the todo item
             var userTicket = await _userApiClient.ValidateTicketAsync(ticketId);
-            if (userTicket == null)
-            {
-                throw new UnauthorizedAccessException("Invalid session."); // Return invalid session error if the ticket is not valid
-            }
+            if (userTicket == null) throw new UnauthorizedAccessException("Invalid session.");
 
-            var todo = _todos.FirstOrDefault(t => t.Id == id);
 
-            if (todo == null)
-                return false;
+            var todo = await _context.Todos.FirstOrDefaultAsync(t => t.Id == id && t.UserId == userTicket.UserId);
 
-            _todos.Remove(todo);
+            if (todo == null) return false;
+
+            _context.Todos.Remove(todo);
+            await _context.SaveChangesAsync();
             return true;
         }
-    
+
 
     }
 

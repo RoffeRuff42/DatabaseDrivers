@@ -30,7 +30,7 @@ namespace TodoApi.Services
             }
 
             // Start with the base queryable for the Todos table
-            var query = _context.Todos.AsQueryable();
+            var query = _context.Todos.Where(t => t.UserId == userTicket.UserId);
 
             // Filter by UserId from the validated ticket to ensure users only see their own todos
             if (!string.IsNullOrEmpty(search))
@@ -47,7 +47,7 @@ namespace TodoApi.Services
                     Id = t.Id,
                     Title = t.Title,
                     IsDone = t.IsDone,
-                    UserId = userTicket.UserId // We use the ID from the ticket here
+                    UserId = userTicket.UserId
                 })
                 .ToListAsync();
         }
@@ -59,8 +59,7 @@ namespace TodoApi.Services
             if (userTicket == null) throw new UnauthorizedAccessException("Invalid session.");
 
             // Fetch the todo item from the database by ID, ensuring it belongs to the user from the validated ticket
-            var todo = await _context.Todos.FirstOrDefaultAsync(t => t.Id == id);
-
+            var todo = await _context.Todos.FirstOrDefaultAsync(t => t.Id == id && t.UserId == userTicket.UserId);
             if (todo == null) return null;
 
             // Return a response DTO that includes the UserId from the validated ticket
@@ -69,7 +68,7 @@ namespace TodoApi.Services
                 Id = todo.Id,
                 Title = todo.Title,
                 IsDone = todo.IsDone,
-                UserId = userTicket.UserId
+                UserId = todo.UserId
             };
         }
 
@@ -89,7 +88,8 @@ namespace TodoApi.Services
             var todo = new Todo
             {
                 Title = dto.Title,
-                IsDone = false
+                IsDone = false,
+                UserId = userTicket.UserId
             };
 
             // Add the new Todo to the database context
@@ -115,7 +115,7 @@ namespace TodoApi.Services
             if (userTicket == null) throw new UnauthorizedAccessException("Invalid session.");
 
             // Fetch the existing todo item from the database by ID
-            var todo = await _context.Todos.FindAsync(id);
+            var todo = await _context.Todos.FirstOrDefaultAsync(t => t.Id == id && t.UserId == userTicket.UserId);
 
             if (todo == null) return false;
 
@@ -134,7 +134,7 @@ namespace TodoApi.Services
             if (userTicket == null) throw new UnauthorizedAccessException("Invalid session.");
 
 
-            var todo = await _context.Todos.FindAsync(id);
+            var todo = await _context.Todos.FirstOrDefaultAsync(t => t.Id == id && t.UserId == userTicket.UserId);
 
             if (todo == null) return false;
 

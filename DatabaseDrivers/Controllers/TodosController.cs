@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Caching.Memory;
+using System.Threading.Tasks;
 using TodoApi.DTOs;
 using TodoApi.Services; 
 
@@ -26,7 +27,7 @@ namespace TodoApi.Controllers
         /// Hämtar alla todos
         /// </summary>
         [HttpGet]
-        public IActionResult GetTodos(int page = 1, int pageSize = 10, string? search = null)
+        public async Task<IActionResult> GetTodos(int page = 1, int pageSize = 10, string? search = null)
         {
 
             var cacheKey = $"todos_{page}_{pageSize}_{search}";
@@ -34,24 +35,27 @@ namespace TodoApi.Controllers
             if (!_cache.TryGetValue(cacheKey, out List<TodoResponseDto> todos))
             {
 
-                todos = _service.GetAll(page, pageSize, search);
+                todos = await _service.GetAllAsync(page, pageSize, search, "ticket123");
 
                 var cacheOptions = new MemoryCacheEntryOptions()
                     .SetAbsoluteExpiration(TimeSpan.FromMinutes(5))
                     .SetSlidingExpiration(TimeSpan.FromMinutes(2));
+
                 _cache.Set(cacheKey, todos, cacheOptions);
             }
             return Ok(todos);
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetTodo(int id)
+        public async Task<IActionResult> GetTodo(int id)
         {
             string cacheKey = $"todo_{id}";
 
-            if (!_cache.TryGetValue(cacheKey, out var todo))
+            if (!_cache.TryGetValue(cacheKey, out TodoResponseDto? todo))
             {
-                todo = _service.GetById(id);
+                // 🔹 ÄNDRING: async metod + ticketId
+                todo = await _service.GetByIdAsync(id, "ticket123");
+
 
                 if (todo == null)
                     return NotFound();
@@ -70,9 +74,10 @@ namespace TodoApi.Controllers
         /// Skapar en ny todo
         /// </summary>
         [HttpPost]
-        public IActionResult CreateTodo(CreateTodoDto dto)
+        public async Task<IActionResult> CreateTodo(CreateTodoDto dto)
         {
-            var createdTodo = _service.Create(dto);
+            // 🔹 ÄNDRING: async + ticketId
+            var createdTodo = await _service.CreateTodoAsync(dto, "ticket123");
 
             return CreatedAtAction(
                 nameof(GetTodo),
@@ -83,9 +88,11 @@ namespace TodoApi.Controllers
 
        
         [HttpPut("{id}")]
-        public IActionResult UpdateTodo(int id, UpdateTodoDto dto)
+        public async Task<IActionResult> UpdateTodo(int id, UpdateTodoDto dto)
         {
-            var updated = _service.UpdateTodo(id, dto);
+            // 🔹 ÄNDRING: async + ticketId
+            var updated = await _service.UpdateTodoAsync(id, dto, "ticket123");
+
 
             if (!updated)
                 return NotFound(); 
@@ -95,9 +102,10 @@ namespace TodoApi.Controllers
 
        
         [HttpDelete("{id}")]
-        public IActionResult DeleteTodo(int id)
+        public async Task<IActionResult> DeleteTodo(int id)
         {
-            var deleted = _service.DeleteTodo(id);
+            // 🔹 ÄNDRING: async + ticketId
+            var deleted = await _service.DeleteTodoAsync(id, "ticket123");
 
             if (!deleted)
                 return NotFound(); 

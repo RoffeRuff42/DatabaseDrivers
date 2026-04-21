@@ -12,9 +12,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Using SQLite as the database provider
 builder.Services.AddDbContext<TodoDbContext>(options =>
-    options.UseSqlite("Data Source=todo_app.db"));            
+    options.UseSqlite("Data Source=todo_app.db"));
 
 // Add services to the container.
+builder.Services.AddScoped<ExecutionTimeFilter>();
 builder.Services.AddScoped<ITodoService, TodoService>(); // Changed from AddSingleton to AddScoped for better handling of DbContext
 builder.Services.AddControllers(options =>
 {

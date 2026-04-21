@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Http.Resilience;
 using Scalar.AspNetCore;
 using TodoApi.Clients;
+using TodoApi.Data;
 using TodoApi.Services;
-using Microsoft.Extensions.Http.Resilience;
 
 namespace DatabaseDrivers
 {
@@ -12,8 +14,12 @@ namespace DatabaseDrivers
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // Using SQLite as the database provider
+            builder.Services.AddDbContext<TodoDbContext>(options =>
+                options.UseSqlite("Data Source=todo_app.db"));            
+
             // Add services to the container.
-            builder.Services.AddSingleton<ITodoService, TodoService>();
+            builder.Services.AddScoped<ITodoService, TodoService>(); // Changed from AddSingleton to AddScoped for better handling of DbContext
             builder.Services.AddControllers();
             builder.Services.AddOpenApi();
 

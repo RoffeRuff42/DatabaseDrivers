@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Caching.Memory;
+using System.Threading.Tasks;
 using TodoApi.DTOs;
 using TodoApi.Services; 
 
@@ -38,6 +39,7 @@ namespace TodoApi.Controllers
                 var cacheOptions = new MemoryCacheEntryOptions()
                     .SetAbsoluteExpiration(TimeSpan.FromMinutes(5))
                     .SetSlidingExpiration(TimeSpan.FromMinutes(2));
+
                 _cache.Set(cacheKey, todos, cacheOptions);
             }
             return Ok(todos);

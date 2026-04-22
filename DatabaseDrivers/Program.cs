@@ -4,6 +4,7 @@ using Microsoft.Extensions.Http.Resilience;
 using Scalar.AspNetCore;
 using TodoApi.Clients;
 using TodoApi.Data;
+using TodoApi.Extensions;
 using TodoApi.Services;
 
 namespace DatabaseDrivers
@@ -80,6 +81,8 @@ namespace DatabaseDrivers
                 //[EnableRateLimiting("sliding")]
             });
 
+            builder.Services.AddCustomCors(builder.Configuration);
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -87,6 +90,11 @@ namespace DatabaseDrivers
             {
                 app.MapOpenApi();
                 app.MapScalarApiReference();
+                app.UseCors("DevelopmentPolicy");
+            }
+            else
+            {
+                app.UseCors("ProductionPolicy");
             }
             using (var scope = app.Services.CreateScope())
             {

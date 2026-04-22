@@ -14,9 +14,18 @@ namespace DatabaseDrivers
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Using SQLite as the database provider
-            builder.Services.AddDbContext<TodoDbContext>(options =>
-                options.UseSqlite("Data Source=todo_app.db"));            
+
+            // Choose database based on environment
+            if (builder.Environment.IsEnvironment("Testing"))
+            {
+                builder.Services.AddDbContext<TodoDbContext>(options =>
+                    options.UseInMemoryDatabase("TestDb"));
+            }
+            else
+            {
+                builder.Services.AddDbContext<TodoDbContext>(options =>
+                    options.UseSqlite("Data Source=todo_app.db"));
+            }
 
             // Add services to the container.
             builder.Services.AddScoped<ITodoService, TodoService>(); // Changed from AddSingleton to AddScoped for better handling of DbContext
@@ -29,7 +38,8 @@ namespace DatabaseDrivers
             });
 
             // Adds standardized error responses (ProblemDetails)
-            builder.Services.AddProblemDetails(options => {
+            builder.Services.AddProblemDetails(options =>
+            {
                 options.CustomizeProblemDetails = context =>
                 {
                     context.ProblemDetails.Instance = context.HttpContext.Request.Path; // Include the request path in the error response
@@ -88,10 +98,14 @@ namespace DatabaseDrivers
                 app.MapOpenApi();
                 app.MapScalarApiReference();
             }
-            using (var scope = app.Services.CreateScope())
+            // Only run in normal application (not during tests)
+            if (!app.Environment.IsEnvironment("Testing"))
             {
-                var db = scope.ServiceProvider.GetRequiredService<TodoDbContext>();
-                db.Database.EnsureCreated();
+                using (var scope = app.Services.CreateScope())
+                {
+                    var db = scope.ServiceProvider.GetRequiredService<TodoDbContext>();
+                    db.Database.EnsureCreated();
+                }
             }
             app.UseHttpsRedirection();
             app.UseRateLimiter();
@@ -100,5 +114,7 @@ namespace DatabaseDrivers
 
             app.Run();
         }
+       
     }
 }
+public partial class Program { }

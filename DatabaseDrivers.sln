@@ -1,9 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.37012.4 d17.14
+# Visual Studio Version 18
+VisualStudioVersion = 18.5.11626.173 insiders
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DatabaseDrivers", "DatabaseDrivers\DatabaseDrivers.csproj", "{BFDA06CA-261A-48E3-AF9F-DAD24E13ABE2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TodoApi", "DatabaseDrivers\TodoApi.csproj", "{BFDA06CA-261A-48E3-AF9F-DAD24E13ABE2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserApi", "ServiceB\UserApi.csproj", "{1A0E67FA-7816-4CA7-9682-7127790F200B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServiceShared", "ServiceShared\ServiceShared.csproj", "{A6C86DAA-F993-4618-BAC0-77CA56927341}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +19,14 @@ Global
 		{BFDA06CA-261A-48E3-AF9F-DAD24E13ABE2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BFDA06CA-261A-48E3-AF9F-DAD24E13ABE2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BFDA06CA-261A-48E3-AF9F-DAD24E13ABE2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A0E67FA-7816-4CA7-9682-7127790F200B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A0E67FA-7816-4CA7-9682-7127790F200B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A0E67FA-7816-4CA7-9682-7127790F200B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A0E67FA-7816-4CA7-9682-7127790F200B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A6C86DAA-F993-4618-BAC0-77CA56927341}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6C86DAA-F993-4618-BAC0-77CA56927341}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6C86DAA-F993-4618-BAC0-77CA56927341}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6C86DAA-F993-4618-BAC0-77CA56927341}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

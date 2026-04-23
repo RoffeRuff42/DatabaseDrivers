@@ -5,9 +5,9 @@ namespace TodoApi.DTOs
     public class QuoteDto
     {
         [JsonPropertyName("q")]
-        public string Quote { get; set; }
+        public required string Quote { get; set; }
 
         [JsonPropertyName("a")]
-        public string Author { get; set; }
+        public required string Author { get; set; }
     }
 }

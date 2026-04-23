@@ -1,6 +1,6 @@
 @ServiceA_HostAddress = http://localhost:5269
 
-GET {{ServiceA_HostAddress}}/weatherforecast/
+GET {{ServiceA_HostAddress}}
 Accept: application/json
 
 ###

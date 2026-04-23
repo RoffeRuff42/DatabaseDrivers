@@ -5,6 +5,7 @@ using Scalar.AspNetCore;
 using TodoApi.Clients;
 using TodoApi.Data;
 using TodoApi.Filters;
+using TodoApi.Extensions;
 using TodoApi.Services;
 
 
@@ -49,6 +50,7 @@ builder.Services.AddHttpClient<IUserApiClient, UserApiClient>(client =>
     options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
 });
 
+
 //change to right url and client name in appsettings after decision
 builder.Services.AddHttpClient<IExternalApiClient, ExternalApiClient>(client =>
 {
@@ -78,24 +80,36 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
-var app = builder.Build();
+            builder.Services.AddCustomCors(builder.Configuration);
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-    app.MapScalarApiReference();
-}
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<TodoDbContext>();
-    db.Database.EnsureCreated();
-}
-app.UseHttpsRedirection();
-app.UseAuthorization();
-app.UseRateLimiter();
-app.MapControllers();
-app.Run();
+            var app = builder.Build();
+
+            // Configure the HTTP request pipeline.
+            if (app.Environment.IsDevelopment())
+            {
+                app.MapOpenApi();
+                app.MapScalarApiReference();
+                app.UseCors("DevelopmentPolicy");
+            }
+            else
+            {
+                app.UseCors("ProductionPolicy");
+            }
+            using (var scope = app.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<TodoDbContext>();
+                db.Database.EnsureCreated();
+            }
+         
+            app.UseHttpsRedirection();
+            app.UseAuthorization(); 
+            app.UseRateLimiter();
+
+            app.MapControllers(); 
+
+            app.Run(); 
+
+
         
     
 

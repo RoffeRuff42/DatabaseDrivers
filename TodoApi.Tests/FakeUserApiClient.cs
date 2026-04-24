@@ -12,8 +12,6 @@ public class FakeUserApiClient : IUserApiClient
             // REQUIRED 
             Username = "TestUser",
 
-            // REQUIRED 
-            TicketId = ticketId
         });
     }
 }

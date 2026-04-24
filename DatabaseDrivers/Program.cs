@@ -1,15 +1,17 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.OpenApi;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Http.Resilience;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
+using System.Text;
 using TodoApi.Clients;
 using TodoApi.Data;
-using TodoApi.Filters;
 using TodoApi.Extensions;
+using TodoApi.Filters;
 using TodoApi.Services;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -79,9 +81,9 @@ builder.Services.AddHttpClient<IQuoteService, QuoteService>(client =>
     options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
 });
 
-builder.Services.AddHttpClient<IUserApiClient, UserApiClient>(client =>
+builder.Services.AddHttpClient<IExternalApiClient, ExternalApiClient>(client =>
 {
-    var baseUrl = builder.Configuration["Services:UserApi"] ?? throw new InvalidOperationException("User API base URL is not configured.");
+    var baseUrl = builder.Configuration["Services:ExternalApi"] ?? throw new InvalidOperationException("External API base URL is not configured.");
     client.BaseAddress = new Uri(baseUrl);
     client.Timeout = TimeSpan.FromSeconds(30);
 })
@@ -92,7 +94,10 @@ builder.Services.AddHttpClient<IUserApiClient, UserApiClient>(client =>
     options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
 });
 
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+}); 
 builder.Services.AddCustomCors(builder.Configuration);
 
 //Ratelimiting
@@ -144,3 +149,34 @@ app.MapControllers();
 app.Run();   
 
 public partial class Program { }
+
+internal sealed class BearerSecuritySchemeTransformer(Microsoft.AspNetCore.Authentication.IAuthenticationSchemeProvider authenticationSchemeProvider) : IOpenApiDocumentTransformer
+{
+    public async Task TransformAsync(OpenApiDocument document, OpenApiDocumentTransformerContext context, CancellationToken cancellationToken)
+    {
+        var authenticationSchemes = await authenticationSchemeProvider.GetAllSchemesAsync();
+        if (authenticationSchemes.Any(authScheme => authScheme.Name == "Bearer"))
+        {
+            var requirements = new Dictionary<string, OpenApiSecurityScheme>
+            {
+                ["Bearer"] = new OpenApiSecurityScheme
+                {
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    In = ParameterLocation.Header,
+                    BearerFormat = "Json Web Token"
+                }
+            };
+            document.Components ??= new OpenApiComponents();
+            document.Components.SecuritySchemes = requirements;
+
+            foreach (var operation in document.Paths.Values.SelectMany(path => path.Operations))
+            {
+                operation.Value.Security.Add(new OpenApiSecurityRequirement
+                {
+                    [new OpenApiSecurityScheme { Reference = new OpenApiReference { Id = "Bearer", Type = ReferenceType.SecurityScheme } }] = Array.Empty<string>()
+                });
+            }
+        }
+    }
+}

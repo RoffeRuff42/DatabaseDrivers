@@ -7,6 +7,9 @@ using TodoApi.Data;
 using TodoApi.Filters;
 using TodoApi.Extensions;
 using TodoApi.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,19 +18,43 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<TodoDbContext>(options =>
     options.UseSqlite("Data Source=todo_app.db"));
 
+// JWT Authentication Configuration
+var jwtKey = builder.Configuration["Jwt:Key"];
+var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+var jwtAudience = builder.Configuration["Jwt:Audience"];
+
+// JWT Authentication and Authorization
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+         .AddJwtBearer(options =>
+         {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+              ValidateIssuer = true,
+              ValidateAudience = true,
+              ValidateLifetime = true,
+              ValidateIssuerSigningKey = true,
+              ValidIssuer = jwtIssuer,
+              ValidAudience = jwtAudience,
+              IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey!))
+            };
+         });
+
+builder.Services.AddAuthorization();
+
 // Add services to the container.
 builder.Services.AddScoped<ExecutionTimeFilter>();
 builder.Services.AddScoped<ITodoService, TodoService>(); // Changed from AddSingleton to AddScoped for better handling of DbContext
+//Cache
+builder.Services.AddMemoryCache();
+
+
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<ExecutionTimeFilter>(); // Add the execution time filter globally to all controllers
 });
 
 builder.Services.AddOpenApi();
-builder.Services.AddHttpClient<IQuoteService, QuoteService>(client =>
-{
-    client.BaseAddress = new Uri("https://zenquotes.io/");
-});
+builder.Services.AddCustomCors(builder.Configuration);
 
 // Adds standardized error responses (ProblemDetails)
 builder.Services.AddProblemDetails(options => {
@@ -35,6 +62,12 @@ builder.Services.AddProblemDetails(options => {
     {
         context.ProblemDetails.Instance = context.HttpContext.Request.Path; // Include the request path in the error response
     };
+});
+
+//change to right url and client name in appsettings after decision
+builder.Services.AddHttpClient<IQuoteService, QuoteService>(client =>
+{
+    client.BaseAddress = new Uri("https://zenquotes.io/");
 });
 
 builder.Services.AddHttpClient<IUserApiClient, UserApiClient>(client =>
@@ -50,8 +83,6 @@ builder.Services.AddHttpClient<IUserApiClient, UserApiClient>(client =>
     options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
 });
 
-
-//change to right url and client name in appsettings after decision
 builder.Services.AddHttpClient<IExternalApiClient, ExternalApiClient>(client =>
 {
     var baseUrl = builder.Configuration["Services:ExternalApi"] ?? throw new InvalidOperationException("External API base URL is not configured.");
@@ -64,8 +95,7 @@ builder.Services.AddHttpClient<IExternalApiClient, ExternalApiClient>(client =>
     options.Retry.Delay = TimeSpan.FromSeconds(2);
     options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
 });
-//Cache
-builder.Services.AddMemoryCache();
+
 //Ratelimiting
 builder.Services.AddRateLimiter(options =>
 {
@@ -80,36 +110,33 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
-            builder.Services.AddCustomCors(builder.Configuration);
+var app = builder.Build();
 
-            var app = builder.Build();
-
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
-            {
-                app.MapOpenApi();
-                app.MapScalarApiReference();
-                app.UseCors("DevelopmentPolicy");
-            }
-            else
-            {
-                app.UseCors("ProductionPolicy");
-            }
-            using (var scope = app.Services.CreateScope())
-            {
-                var db = scope.ServiceProvider.GetRequiredService<TodoDbContext>();
-                db.Database.EnsureCreated();
-            }
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+  app.MapOpenApi();
+  app.MapScalarApiReference();
+  app.UseCors("DevelopmentPolicy");
+ }
+ else
+ {
+   app.UseCors("ProductionPolicy");
+ }
+ using (var scope = app.Services.CreateScope())
+ {
+   var db = scope.ServiceProvider.GetRequiredService<TodoDbContext>();
+   db.Database.EnsureCreated();
+ }
          
-            app.UseHttpsRedirection();
-            app.UseAuthorization(); 
-            app.UseRateLimiter();
+app.UseHttpsRedirection();
+app.UseRateLimiter();
 
-            app.MapControllers(); 
+app.UseAuthentication();
+app.UseAuthorization();
 
-            app.Run(); 
+app.MapControllers();
+            
 
-
-        
-    
+app.Run();    
 

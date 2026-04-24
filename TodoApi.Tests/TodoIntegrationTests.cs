@@ -27,7 +27,7 @@ namespace TodoApi.Tests
         [Fact]
         public async Task GetTodo_InvalidId_ReturnsNotFound()
         {
-            var response = await _client.GetAsync("/api/v1/todos/999?ticketId=test");
+            var response = await _client.GetAsync("/api/v1/todos/999");
 
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         }

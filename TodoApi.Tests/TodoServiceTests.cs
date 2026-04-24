@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Moq;
+using Microsoft.Extensions.Caching.Memory;
 using System.Timers;
 using TodoApi.Clients;
 using TodoApi.Data;
@@ -32,7 +33,7 @@ namespace TodoApi.Tests
         //Creates a TodoService instance and mocked dependencies
         private static TodoService CreateService(TodoDbContext context, Mock<IExternalApiClient> externalApiMock)
         {
-            return new TodoService(context, externalApiMock.Object);
+            return new TodoService(context, externalApiMock.Object, new MemoryCache(new MemoryCacheOptions()));
         }
         //Tests that GetAllAsync returns only the todos that belong to the validated user
         [Fact]

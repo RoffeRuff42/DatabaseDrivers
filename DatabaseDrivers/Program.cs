@@ -81,9 +81,9 @@ builder.Services.AddHttpClient<IQuoteService, QuoteService>(client =>
     options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
 });
 
-builder.Services.AddHttpClient<IUserApiClient, UserApiClient>(client =>
+builder.Services.AddHttpClient<IExternalApiClient, ExternalApiClient>(client =>
 {
-    var baseUrl = builder.Configuration["Services:UserApi"] ?? throw new InvalidOperationException("User API base URL is not configured.");
+    var baseUrl = builder.Configuration["Services:ExternalApi"] ?? throw new InvalidOperationException("External API base URL is not configured.");
     client.BaseAddress = new Uri(baseUrl);
     client.Timeout = TimeSpan.FromSeconds(30);
 })
@@ -93,7 +93,6 @@ builder.Services.AddHttpClient<IUserApiClient, UserApiClient>(client =>
     options.Retry.Delay = TimeSpan.FromSeconds(1);
     options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
 });
-
 
 builder.Services.AddOpenApi(options =>
 {

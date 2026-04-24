@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.Extensions.Caching.Memory;
 using System.Threading.Tasks;
 using TodoApi.DTOs;
 using TodoApi.Services;
@@ -16,13 +15,10 @@ namespace TodoApi.Controllers
     public class TodosController : ControllerBase
     {
         private readonly ITodoService _service;
-        private readonly IMemoryCache _cache;
 
-        public TodosController(ITodoService service, IMemoryCache cache)
+        public TodosController(ITodoService service)
         {
             _service = service;
-            _cache = cache;
-
         }
 
         // Helper method to extract user ID from JWT claims
@@ -38,20 +34,10 @@ namespace TodoApi.Controllers
         [HttpGet]
         public async Task<IActionResult> GetTodos(int page = 1, int pageSize = 10, string? search = null)
         {
-
             int userId = GetUserId();
-            var cacheKey = $"todos_{userId}_{page}_{pageSize}_{search}";
+            
+            var todos = await _service.GetAllAsync(page, pageSize, search, userId);
 
-            if (!_cache.TryGetValue(cacheKey, out List<TodoResponseDto>? todos))
-            {
-                todos = await _service.GetAllAsync(page, pageSize, search, userId);
-
-                var cacheOptions = new MemoryCacheEntryOptions()
-                    .SetAbsoluteExpiration(TimeSpan.FromMinutes(5))
-                    .SetSlidingExpiration(TimeSpan.FromMinutes(2));
-
-                _cache.Set(cacheKey, todos, cacheOptions);
-            }
             return Ok(todos);
         }
 
@@ -59,17 +45,10 @@ namespace TodoApi.Controllers
         public async Task<IActionResult> GetTodo(int id)
         {
             int userId = GetUserId();
-            string cacheKey = $"todo_{id}_{userId}";
 
-            if (!_cache.TryGetValue(cacheKey, out TodoResponseDto? todo))
-            {
-                todo = await _service.GetByIdAsync(id, userId);
-
-                if (todo == null)
-                    return NotFound();
-
-                _cache.Set(cacheKey, todo, TimeSpan.FromMinutes(5));
-            }
+            var todo = await _service.GetByIdAsync(id, userId);
+            if(todo == null)
+                return NotFound();
 
             return Ok(todo);
         }

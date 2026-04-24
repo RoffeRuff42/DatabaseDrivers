@@ -10,6 +10,7 @@ namespace TodoApi.Tests
 {
     public class TodoServiceTests
     {
+        //Method to create a new in-memory database context for each test
         private static TodoDbContext CreateContext()
         {
             var options = new DbContextOptionsBuilder<TodoDbContext>()
@@ -18,7 +19,7 @@ namespace TodoApi.Tests
 
             return new TodoDbContext(options);
         }
-
+        //Creates a valid UserLoginDto with id 1.
         private static UserLoginDto CreateValidUserTicket(int userId = 1, string ticketId = "ticket123")
         {
             return new UserLoginDto
@@ -28,38 +29,41 @@ namespace TodoApi.Tests
                 TicketId = ticketId
             };
         }
-
-        private static TodoService CreateService(
-            TodoDbContext context,
-            Mock<IUserApiClient> userApiMock,
-            Mock<IExternalApiClient> externalApiMock)
+        //Creates a TodoService instance and mocked dependencies
+        private static TodoService CreateService(TodoDbContext context, Mock<IUserApiClient> userApiMock, Mock<IExternalApiClient> externalApiMock)
         {
             return new TodoService(context, userApiMock.Object, externalApiMock.Object);
         }
-
+        //Tests that GetAllAsync returns only the todos that belong to the validated user
         [Fact]
         public async Task GetAllAsync_ReturnsOnlyTodosForValidatedUser()
         {
+            //Creates context
             using var context = CreateContext();
-
+            //Creates 3 todos, 2 for user 1 and 1 for user 2
             context.Todos.AddRange(
                 new Todo { Id = 1, Title = "User 1 Todo A", IsDone = false, UserId = 1 },
                 new Todo { Id = 2, Title = "User 1 Todo B", IsDone = false, UserId = 1 },
                 new Todo { Id = 3, Title = "User 2 Todo", IsDone = false, UserId = 2 }
             );
+            //Saves changes to the in-memory database
             await context.SaveChangesAsync();
 
+            //Creates mocks for IUserApiClient and IExternalApiClient
             var userApiMock = new Mock<IUserApiClient>();
             var externalApiMock = new Mock<IExternalApiClient>();
 
+            //Sets up the userApiMock to return a valid UserLoginDto when ValidateTicketAsync is called with "ticket123"
             userApiMock
                 .Setup(x => x.ValidateTicketAsync("ticket123"))
                 .ReturnsAsync(CreateValidUserTicket(1, "ticket123"));
 
             var service = CreateService(context, userApiMock, externalApiMock);
 
+            //Calls GetAllAsync with the valid ticket and checks that only the todos for user 1 are returned
             var result = await service.GetAllAsync(1, 10, null, "ticket123");
 
+            //Asserts that 2 todos are returned, all belong to user 1, and none have the title "User 2 Todo"
             Assert.Equal(2, result.Count);
             Assert.All(result, todo => Assert.Equal(1, todo.UserId));
             Assert.DoesNotContain(result, todo => todo.Title == "User 2 Todo");
@@ -70,6 +74,7 @@ namespace TodoApi.Tests
         {
             using var context = CreateContext();
 
+            // Creates 3 todos for user 1, with different titles
             context.Todos.AddRange(
                 new Todo { Id = 1, Title = "Buy milk", IsDone = false, UserId = 1 },
                 new Todo { Id = 2, Title = "Buy bread", IsDone = false, UserId = 1 },
@@ -86,8 +91,10 @@ namespace TodoApi.Tests
 
             var service = CreateService(context, userApiMock, externalApiMock);
 
+            // Calls GetAllAsync with page 1, page size 1, and search term buy
             var result = await service.GetAllAsync(1, 1, "buy", "ticket123");
 
+            // Asserts that only 1 todo is returned and its title contains "Buy"
             Assert.Single(result);
             Assert.Contains("Buy", result[0].Title);
         }
@@ -97,6 +104,7 @@ namespace TodoApi.Tests
         {
             using var context = CreateContext();
 
+            //Adds a todo with id 5 for user 1
             context.Todos.Add(new Todo
             {
                 Id = 5,
@@ -115,6 +123,7 @@ namespace TodoApi.Tests
 
             var service = CreateService(context, userApiMock, externalApiMock);
 
+            //Calls GetByIdAsync with the id of the existing todo and checks that the correct todo is returned
             var result = await service.GetByIdAsync(5, "ticket123");
 
             Assert.NotNull(result);
@@ -128,6 +137,7 @@ namespace TodoApi.Tests
         {
             using var context = CreateContext();
 
+            //Adds a todo with id 10 for user 2
             context.Todos.Add(new Todo
             {
                 Id = 10,
@@ -140,12 +150,14 @@ namespace TodoApi.Tests
             var userApiMock = new Mock<IUserApiClient>();
             var externalApiMock = new Mock<IExternalApiClient>();
 
+            //Creates a valid user ticket for user 1, but the todo belongs to user 2
             userApiMock
                 .Setup(x => x.ValidateTicketAsync("ticket123"))
                 .ReturnsAsync(CreateValidUserTicket(1, "ticket123"));
 
             var service = CreateService(context, userApiMock, externalApiMock);
 
+            //Calls GetByIdAsync with the id of the todo that belongs to another user and checks that null is returned
             var result = await service.GetByIdAsync(10, "ticket123");
 
             Assert.Null(result);
@@ -169,12 +181,13 @@ namespace TodoApi.Tests
 
             var service = CreateService(context, userApiMock, externalApiMock);
 
+            //Creates a CreateTodoDto with the title "New Todo" and a valid ticket id
             var dto = new CreateTodoDto
             {
                 Title = "New Todo",
                 TicketId = "ticket123"
             };
-
+            
             var result = await service.CreateTodoAsync(dto, "ticket123");
 
             Assert.NotNull(result);
@@ -186,7 +199,7 @@ namespace TodoApi.Tests
             Assert.NotNull(savedTodo);
             Assert.False(savedTodo!.IsDone);
             Assert.Equal(1, savedTodo.UserId);
-
+            // Verifies that the external API was called once with the expected parameter
             externalApiMock.Verify(x => x.GetTestDataAsync("random-quote"), Times.Once);
         }
 
@@ -195,6 +208,7 @@ namespace TodoApi.Tests
         {
             using var context = CreateContext();
 
+            //Adds a todo with id 7 for user 1
             context.Todos.Add(new Todo
             {
                 Id = 7,
@@ -213,6 +227,7 @@ namespace TodoApi.Tests
 
             var service = CreateService(context, userApiMock, externalApiMock);
 
+            //Creates an UpdateTodoDto with the new title, isDone status, and a valid ticket id
             var dto = new UpdateTodoDto
             {
                 Title = "Updated title",
@@ -220,6 +235,7 @@ namespace TodoApi.Tests
                 TicketId = "ticket123"
             };
 
+            //Calls UpdateTodoAsync with the id of the existing todo, the update DTO, and checks that the method returns true and the todo is updated in the database
             var result = await service.UpdateTodoAsync(7, dto, "ticket123");
 
             Assert.True(result);
@@ -235,6 +251,7 @@ namespace TodoApi.Tests
         {
             using var context = CreateContext();
 
+            //Adds a todo with id 9 for user 1
             context.Todos.Add(new Todo
             {
                 Id = 9,
@@ -253,6 +270,7 @@ namespace TodoApi.Tests
 
             var service = CreateService(context, userApiMock, externalApiMock);
 
+            //Calls DeleteTodoAsync with the id of the existing todo and a valid ticket id, and checks that the method returns true and the todo is removed from the database
             var result = await service.DeleteTodoAsync(9, "ticket123");
 
             Assert.True(result);
@@ -266,13 +284,14 @@ namespace TodoApi.Tests
 
             var userApiMock = new Mock<IUserApiClient>();
             var externalApiMock = new Mock<IExternalApiClient>();
-
+            //Sets up the userApiMock to return null when ValidateTicketAsync is called with "bad-ticket", simulating an invalid ticket
             userApiMock
                 .Setup(x => x.ValidateTicketAsync("bad-ticket"))
                 .ReturnsAsync((UserLoginDto?)null);
 
             var service = CreateService(context, userApiMock, externalApiMock);
 
+            // Calls GetAllAsync with an invalid ticket and checks that an UnauthorizedAccessException is thrown
             await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
                 service.GetAllAsync(1, 10, null, "bad-ticket"));
         }

@@ -4,7 +4,7 @@ namespace UserApi.Services
 {
     public interface IUserAuthService
     {
-        UserTicketDto? Login(string username, string password);
-        UserTicketDto? ValidateTicket(string ticketId);
+        // Now returns a string (the JWT token) instead of a DTO
+        string? Login(string username, string password);
     }
 }

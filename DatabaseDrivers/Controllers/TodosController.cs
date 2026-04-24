@@ -3,13 +3,16 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Caching.Memory;
 using System.Threading.Tasks;
 using TodoApi.DTOs;
-using TodoApi.Services; 
+using TodoApi.Services;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace TodoApi.Controllers
 {
     [ApiController]
     [Route("api/v1/todos")]
     [EnableRateLimiting("sliding")]
+    [Authorize]
     public class TodosController : ControllerBase
     {
         private readonly ITodoService _service;
@@ -22,19 +25,26 @@ namespace TodoApi.Controllers
 
         }
 
+        // Helper method to extract user ID from JWT claims
+        private int GetUserId() 
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            return int.TryParse(userIdClaim, out int userId) ? userId : 0;
+        }
+
         /// <summary>
         /// Hämtar alla todos
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> GetTodos(int page = 1, int pageSize = 10, string? search = null, string? ticketId = null)
+        public async Task<IActionResult> GetTodos(int page = 1, int pageSize = 10, string? search = null)
         {
 
-            var cacheKey = $"todos_{page}_{pageSize}_{search}_{ticketId}";
+            int userId = GetUserId();
+            var cacheKey = $"todos_{userId}_{page}_{pageSize}_{search}";
 
             if (!_cache.TryGetValue(cacheKey, out List<TodoResponseDto>? todos))
             {
-                // Updated to call the Async version with the TestTicket
-                todos = await _service.GetAllAsync(page, pageSize, search, ticketId);
+                todos = await _service.GetAllAsync(page, pageSize, search, userId);
 
                 var cacheOptions = new MemoryCacheEntryOptions()
                     .SetAbsoluteExpiration(TimeSpan.FromMinutes(5))
@@ -46,23 +56,19 @@ namespace TodoApi.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetTodo(int id, string ticketId)
+        public async Task<IActionResult> GetTodo(int id)
         {
-            string cacheKey = $"todo_{id}_{ticketId}";
+            int userId = GetUserId();
+            string cacheKey = $"todo_{id}_{userId}";
 
             if (!_cache.TryGetValue(cacheKey, out TodoResponseDto? todo))
             {
-                // Updated to call the Async version
-                todo = await _service.GetByIdAsync(id, ticketId);
+                todo = await _service.GetByIdAsync(id, userId);
 
                 if (todo == null)
                     return NotFound();
 
-                var cacheOptions = new MemoryCacheEntryOptions()
-                    .SetAbsoluteExpiration(TimeSpan.FromMinutes(5))
-                    .SetSlidingExpiration(TimeSpan.FromMinutes(2));
-
-                _cache.Set(cacheKey, todo, cacheOptions);
+                _cache.Set(cacheKey, todo, TimeSpan.FromMinutes(5));
             }
 
             return Ok(todo);
@@ -74,40 +80,38 @@ namespace TodoApi.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateTodo(CreateTodoDto dto)
         {
-            // Updated to call CreateTodoAsync
-            var createdTodo = await _service.CreateTodoAsync(dto, dto.TicketId);
+            int userId = GetUserId();
+            var createdTodo = await _service.CreateTodoAsync(dto, userId);
 
-            return CreatedAtAction(
-                nameof(GetTodo),
-                new { id = createdTodo!.Id },
-                createdTodo
-            ); 
+            if (createdTodo == null) return BadRequest();
+
+            return CreatedAtAction(nameof(GetTodo), new { id = createdTodo.Id }, createdTodo);
         }
 
-       
+
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateTodo(int id, UpdateTodoDto dto)
         {
-            // Updated to call UpdateTodoAsync
-            var updated = await _service.UpdateTodoAsync(id, dto, dto.TicketId);
+            int userId = GetUserId();
+            var updated = await _service.UpdateTodoAsync(id, dto, userId);
 
             if (!updated)
                 return NotFound();
 
-            return NoContent(); 
+            return NoContent();
         }
 
-       
+
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteTodo(int id, string ticketId)
+        public async Task<IActionResult> DeleteTodo(int id)
         {
-            // Updated to call DeleteTodoAsync
-            var deleted = await _service.DeleteTodoAsync(id, ticketId);
+            int userId = GetUserId();
+            var deleted = await _service.DeleteTodoAsync(id, userId);
 
             if (!deleted)
                 return NotFound();
 
-            return NoContent(); 
+            return NoContent();
         }
     }
 }

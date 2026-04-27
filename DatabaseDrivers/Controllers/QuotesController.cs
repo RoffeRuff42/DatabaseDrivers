@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using TodoApi.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace TodoApi.Controllers
 {
@@ -8,6 +9,7 @@ namespace TodoApi.Controllers
     /// </summary>
     [ApiController]
     [Route("api/v1/quotes")]
+    [Authorize]
     public class QuotesController : ControllerBase
     {
         private readonly IQuoteService _quoteService;

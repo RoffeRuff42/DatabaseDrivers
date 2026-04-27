@@ -1,8 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Moq;
 using Microsoft.Extensions.Caching.Memory;
 using System.Timers;
-using TodoApi.Clients;
 using TodoApi.Data;
 using TodoApi.DTOs;
 using TodoApi.Models;
@@ -31,9 +29,9 @@ namespace TodoApi.Tests
             };
         }
         //Creates a TodoService instance and mocked dependencies
-        private static TodoService CreateService(TodoDbContext context, Mock<IExternalApiClient> externalApiMock)
+        private static TodoService CreateService(TodoDbContext context)
         {
-            return new TodoService(context, externalApiMock.Object, new MemoryCache(new MemoryCacheOptions()));
+            return new TodoService(context, new MemoryCache(new MemoryCacheOptions()));
         }
         //Tests that GetAllAsync returns only the todos that belong to the validated user
         [Fact]
@@ -50,10 +48,7 @@ namespace TodoApi.Tests
             //Saves changes to the in-memory database
             await context.SaveChangesAsync();
 
-            //Creates mocks for IExternalApiClient
-            var externalApiMock = new Mock<IExternalApiClient>();
-
-            var service = CreateService(context, externalApiMock);
+            var service = CreateService(context);
 
             //Calls GetAllAsync with the valid ticket and checks that only the todos for user 1 are returned
             var result = await service.GetAllAsync(1, 10, null, 1);
@@ -77,9 +72,7 @@ namespace TodoApi.Tests
             );
             await context.SaveChangesAsync();
 
-            var externalApiMock = new Mock<IExternalApiClient>();
-
-            var service = CreateService(context, externalApiMock);
+            var service = CreateService(context);
 
             // Calls GetAllAsync with page 1, page size 1, and search term buy
             var result = await service.GetAllAsync(1, 1, "buy", 1);
@@ -104,9 +97,7 @@ namespace TodoApi.Tests
             });
             await context.SaveChangesAsync();
 
-            var externalApiMock = new Mock<IExternalApiClient>();
-
-            var service = CreateService(context, externalApiMock);
+            var service = CreateService(context);
 
             //Calls GetByIdAsync with the id of the existing todo and checks that the correct todo is returned
             var result = await service.GetByIdAsync(5, 1);
@@ -132,9 +123,7 @@ namespace TodoApi.Tests
             });
             await context.SaveChangesAsync();
 
-            var externalApiMock = new Mock<IExternalApiClient>();
-
-            var service = CreateService(context, externalApiMock);
+            var service = CreateService(context);
 
             //Calls GetByIdAsync with the id of the todo that belongs to another user and checks that null is returned
             var result = await service.GetByIdAsync(10, 1);
@@ -143,17 +132,11 @@ namespace TodoApi.Tests
         }
 
         [Fact]
-        public async Task CreateTodoAsync_CreatesTodoWithIsDoneFalse_AndCallsExternalApi()
+        public async Task CreateTodoAsync_CreatesTodoWithIsDoneFalse()
         {
             using var context = CreateContext();
 
-            var externalApiMock = new Mock<IExternalApiClient>();
-
-            externalApiMock
-                .Setup(x => x.GetTestDataAsync("random-quote"))
-                .ReturnsAsync(new { message = "fake data" });
-
-            var service = CreateService(context, externalApiMock);
+            var service = CreateService(context);
 
             //Creates a CreateTodoDto with the title "New Todo" and a valid ticket id
             var dto = new CreateTodoDto
@@ -173,8 +156,6 @@ namespace TodoApi.Tests
             Assert.False(savedTodo!.IsDone);
             Assert.Equal(1, savedTodo.UserId);
 
-            // Verifies that the external API was called once with the expected parameter
-            externalApiMock.Verify(x => x.GetTestDataAsync("random"), Times.Once);
         }
 
         [Fact]
@@ -192,9 +173,7 @@ namespace TodoApi.Tests
             });
             await context.SaveChangesAsync();
 
-            var externalApiMock = new Mock<IExternalApiClient>();
-
-            var service = CreateService(context, externalApiMock);
+            var service = CreateService(context);
 
             //Creates an UpdateTodoDto with the new title, isDone status, and a valid ticket id
             var dto = new UpdateTodoDto
@@ -229,9 +208,7 @@ namespace TodoApi.Tests
             });
             await context.SaveChangesAsync();
 
-            var externalApiMock = new Mock<IExternalApiClient>();
-
-            var service = CreateService(context, externalApiMock);
+            var service = CreateService(context);
 
             //Calls DeleteTodoAsync with the id of the existing todo and a valid ticket id, and checks that the method returns true and the todo is removed from the database
             var result = await service.DeleteTodoAsync(9, 1);

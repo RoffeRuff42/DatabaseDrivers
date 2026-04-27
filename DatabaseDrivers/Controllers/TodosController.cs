@@ -56,7 +56,7 @@ namespace TodoApi.Controllers
 
             return Ok(todos);
         }
-        [HttpGet]
+        [HttpGet("v2")]
         [MapToApiVersion(2.0)]
         public async Task<IActionResult> GetTodosV2(
          int page = 1,

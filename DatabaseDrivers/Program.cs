@@ -54,6 +54,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
           ValidAudience = jwtAudience,
           IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey!))
         };
+         //For debugging
+         options.Events = new JwtBearerEvents
+         {
+             OnAuthenticationFailed = context =>
+             {
+                Console.WriteLine("JWT VALIDATION FAILED: " + context.Exception.Message);
+                return Task.CompletedTask; 
+             }
+         };
      });
 
 builder.Services.AddAuthorization();
@@ -97,7 +106,7 @@ builder.Services.AddHttpClient<IQuoteService, QuoteService>(client =>
     options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
 });
 
-builder.Services.AddOpenApi(options =>
+builder.Services.AddSwaggerGen(options =>
 {
     var currentDirectory = AppContext.BaseDirectory;
     var xmlFiles = Directory.GetFiles(currentDirectory, "*.xml");

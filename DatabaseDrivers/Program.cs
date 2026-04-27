@@ -13,6 +13,15 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+//activates DI validation
+builder.Host.UseDefaultServiceProvider((context, options) =>
+{
+    //prevents "Captive Dependencies" 
+    options.ValidateScopes = true;
+    //ensures registration
+    options.ValidateOnBuild = true;
+});
+
 // Choose database based on environment
 if (builder.Environment.IsEnvironment("Testing"))
 {

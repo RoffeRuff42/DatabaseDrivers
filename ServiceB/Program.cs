@@ -7,6 +7,15 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+//activates DI validation
+builder.Host.UseDefaultServiceProvider((context, options) =>
+{
+    //prevents "Captive Dependencies" 
+    options.ValidateScopes = true;
+    //ensures registration
+    options.ValidateOnBuild = true;
+});
+
 // JWT Authentication Configuration
 var jwtKey = builder.Configuration["Jwt:Key"];
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];

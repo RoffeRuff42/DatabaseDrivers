@@ -5,6 +5,7 @@ using TodoApi.DTOs;
 using TodoApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using Asp.Versioning;
 
 namespace TodoApi.Controllers
 {
@@ -13,7 +14,9 @@ namespace TodoApi.Controllers
     /// Provides endpoints to list, retrieve, create, update and delete todos.
     /// </summary>
     [ApiController]
-    [Route("api/v1/todos")]
+    [Route("api/v{version:apiVersion}/todos")]
+    [ApiVersion(1.0)]
+    [ApiVersion(2.0)]
     [EnableRateLimiting("sliding")]
     [Authorize]
     public class TodosController : ControllerBase
@@ -44,6 +47,7 @@ namespace TodoApi.Controllers
         /// <response code="401">If the provided ticketId is not valid.</response>
         /// <response code="429">When rate limit is exceeded.</response>
         [HttpGet]
+        [MapToApiVersion(1.0)]
         public async Task<IActionResult> GetTodos(int page = 1, int pageSize = 10, string? search = null)
         {
             int userId = GetUserId();
@@ -52,7 +56,20 @@ namespace TodoApi.Controllers
 
             return Ok(todos);
         }
+        [HttpGet]
+        [MapToApiVersion(2.0)]
+        public async Task<IActionResult> GetTodosV2(
+         int page = 1,
+         int pageSize = 10,
+         string? search = null,
+         bool? isDone = null)
+        {
+            int userId = GetUserId();
 
+            var todos = await _service.GetAllV2Async(page, pageSize, search, isDone, userId);
+
+            return Ok(todos);
+        }
         /// <summary>
         /// Retrieves a single todo by id.
         /// </summary>

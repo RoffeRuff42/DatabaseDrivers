@@ -1,10 +1,11 @@
-﻿using System.Threading.Tasks;
-using TodoApi.Clients;
-using TodoApi.DTOs;
+﻿using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using TodoApi.Data;
-using TodoApi.Models;
 using Microsoft.Extensions.Caching.Memory;
+using System.Threading.Tasks;
+using TodoApi.Clients;
+using TodoApi.Data;
+using TodoApi.DTOs;
+using TodoApi.Models;
 
 namespace TodoApi.Services
 {
@@ -87,6 +88,62 @@ namespace TodoApi.Services
                 .ToListAsync();
 
             _cache.Set(cacheKey, todos);
+
+            return todos;
+        }
+
+        public async Task<List<TodoResponseV2Dto>> GetAllV2Async(int page, int pageSize, string? search, bool? isDone, int userId)
+        {
+            int version = GetTodoListVersion(userId);
+            string cacheKey = $"todos_v2_user_{userId}_page_{page}_pageSize_{pageSize}_search_{search}_isDone_{isDone}_v{version}";
+            if (_cache.TryGetValue(cacheKey, out List<TodoResponseV2Dto>? cachedTodos)) { return cachedTodos!; }
+            var query = _context.Todos.AsNoTracking().Where(t => t.UserId == userId);
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                string loweredSearch = search.ToLower();
+                query = query.Where(t => t.Title.ToLower().Contains(loweredSearch));
+            }
+            if (isDone.HasValue)
+            {
+                query = query.Where(t => t.IsDone == isDone.Value);
+            }
+            List<TodoResponseV2Dto> todos;
+
+            try
+            {
+                todos = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(t => new TodoResponseV2Dto
+                    {
+                        Id = t.Id,
+                        Title = t.Title,
+                        IsDone = t.IsDone,
+                        UserId = t.UserId,
+                        CreatedAt = t.CreatedAt
+                    })
+                    .ToListAsync();
+            }
+            catch (SqliteException ex) when (ex.Message.Contains("no such column") && ex.Message.Contains("CreatedAt"))
+            {
+                todos = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(t => new TodoResponseV2Dto
+                    {
+                        Id = t.Id,
+                        Title = t.Title,
+                        IsDone = t.IsDone,
+                        UserId = t.UserId,
+
+                        // If trying to use V2 with old database, return a default value for CreatedAt
+                        CreatedAt = DateTime.MinValue
+                    })
+                    .ToListAsync();
+            }
+
+
+            _cache.Set(cacheKey, todos); 
 
             return todos;
         }

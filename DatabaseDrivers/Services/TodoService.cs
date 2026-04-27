@@ -12,15 +12,13 @@ namespace TodoApi.Services
     public class TodoService : ITodoService
     {
         private readonly TodoDbContext _context; // Our new connection to the database
-        private readonly IExternalApiClient _externalApiClient;
         private readonly IMemoryCache _cache;
 
         // Note: IUserApiClient is removed because we don't need to "call home" to validate tickets anymore!
 
-        public TodoService(TodoDbContext context, IExternalApiClient externalApiClient, IMemoryCache cache)
+        public TodoService(TodoDbContext context, IMemoryCache cache)
         {
             _context = context; // Assign the injected context
-            _externalApiClient = externalApiClient;
             _cache = cache;
         }
         private string GetTodosCacheKey(int page, int pageSize, string? search, int userId)
@@ -176,8 +174,6 @@ namespace TodoApi.Services
 
         public async Task<TodoResponseDto?> CreateTodoAsync(CreateTodoDto dto, int userId)
         {
-            var randomQuote = await _externalApiClient.GetTestDataAsync("random");
-
             var todo = new Todo
             {
                 Title = dto.Title,

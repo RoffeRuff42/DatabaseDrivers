@@ -97,20 +97,7 @@ builder.Services.AddHttpClient<IQuoteService, QuoteService>(client =>
     options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
 });
 
-builder.Services.AddHttpClient<IExternalApiClient, ExternalApiClient>(client =>
-{
-    var baseUrl = builder.Configuration["Services:ExternalApi"] ?? throw new InvalidOperationException("External API base URL is not configured.");
-    client.BaseAddress = new Uri(baseUrl);
-    client.Timeout = TimeSpan.FromSeconds(30);
-})
-.AddStandardResilienceHandler(options =>
-{
-    options.Retry.MaxRetryAttempts = 2;
-    options.Retry.Delay = TimeSpan.FromSeconds(1);
-    options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
-});
-
-builder.Services.AddSwaggerGen(options =>
+builder.Services.AddOpenApi(options =>
 {
     var currentDirectory = AppContext.BaseDirectory;
     var xmlFiles = Directory.GetFiles(currentDirectory, "*.xml");

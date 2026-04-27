@@ -5,10 +5,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using TodoApi.Clients;
 
 public class CustomWebApplicationFactory
     : WebApplicationFactory<Program>
@@ -18,12 +16,6 @@ public class CustomWebApplicationFactory
         builder.UseEnvironment("Testing");
         builder.UseSetting("https_port", "443");
         builder.ConfigureLogging(logging => logging.ClearProviders());
-
-        builder.ConfigureServices(services =>
-        {
-            services.RemoveAll<IExternalApiClient>();
-            services.AddScoped<IExternalApiClient, FakeExternalApiClient>();
-        });
 
         builder.ConfigureTestServices(services =>
         {

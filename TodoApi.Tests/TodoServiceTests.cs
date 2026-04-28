@@ -19,15 +19,7 @@ namespace TodoApi.Tests
 
             return new TodoDbContext(options);
         }
-        //Creates a valid UserLoginDto with id 1.
-        private static UserLoginDto CreateValidUserTicket(int userId = 1)
-        {
-            return new UserLoginDto
-            {
-                UserId = userId,
-                Username = "Robin"
-            };
-        }
+       
         //Creates a TodoService instance and mocked dependencies
         private static TodoService CreateService(TodoDbContext context)
         {

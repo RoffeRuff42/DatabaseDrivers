@@ -12,17 +12,13 @@ namespace UserApi.Services
     {
 
         private readonly IConfiguration _configuration;
+        private readonly List<User> _users;
 
-        private static readonly List<User> _users = new List<User>
-        {
-            new User { UserId = 1, Username = "Robin", Password = "password123" },
-            new User { UserId = 2, Username = "Lisa", Password = "password123" },
-            new User { UserId = 3, Username = "Liza", Password = "password123" },
-            new User { UserId = 4, Username = "Rolf", Password = "password123" }
-        };
         public UserAuthService(IConfiguration configuration) // Inject IConfiguration to access JWT settings
         {
             _configuration = configuration;
+            _users = _configuration.GetSection("TestUsers").Get<List<User>>()
+                     ?? new List<User>();
         }
         public string? Login(string username, string password) // Now returns a string (the JWT token) instead of a DTO
         {

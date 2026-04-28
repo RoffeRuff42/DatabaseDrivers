@@ -1,11 +1,8 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.OpenApi;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Http.Resilience;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
 using System.Text;
 using TodoApi.Clients;
@@ -13,9 +10,18 @@ using TodoApi.Data;
 using TodoApi.Extensions;
 using TodoApi.Filters;
 using TodoApi.Services;
-
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+
+//activates DI validation
+builder.Host.UseDefaultServiceProvider((context, options) =>
+{
+    //prevents "Captive Dependencies" 
+    options.ValidateScopes = builder.Environment.IsDevelopment();
+    //ensures registration
+    options.ValidateOnBuild = builder.Environment.IsDevelopment();
+});
 
 // Choose database based on environment
 if (builder.Environment.IsEnvironment("Testing"))
@@ -48,6 +54,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
           ValidAudience = jwtAudience,
           IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey!))
         };
+         //For debugging
+         options.Events = new JwtBearerEvents
+         {
+             OnAuthenticationFailed = context =>
+             {
+                Console.WriteLine("JWT VALIDATION FAILED: " + context.Exception.Message);
+                return Task.CompletedTask; 
+             }
+         };
      });
 
 builder.Services.AddAuthorization();
@@ -91,10 +106,39 @@ builder.Services.AddHttpClient<IQuoteService, QuoteService>(client =>
     options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
 });
 
-builder.Services.AddOpenApi(options =>
+builder.Services.AddSwaggerGen(options =>
 {
-    options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
-}); 
+    var currentDirectory = AppContext.BaseDirectory;
+    var xmlFiles = Directory.GetFiles(currentDirectory, "*.xml");
+    foreach (var xmlFile in xmlFiles)
+    {
+        options.IncludeXmlComments(xmlFile);
+    }
+
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        In = ParameterLocation.Header,
+        BearerFormat = "JWT"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
 builder.Services.AddCustomCors(builder.Configuration);
 
 //Ratelimiting
@@ -116,9 +160,15 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-  app.MapOpenApi();
-  app.MapScalarApiReference();
-  app.UseCors("DevelopmentPolicy");
+    app.UseSwagger(options =>
+    {
+        options.RouteTemplate = "openapi/{documentName}.json";
+    });
+    app.MapScalarApiReference(options =>
+    {
+        options.WithOpenApiRoutePattern("/openapi/v1.json");
+    });
+    app.UseCors("DevelopmentPolicy");
  }
  else
  {
@@ -146,34 +196,3 @@ app.MapControllers();
 app.Run();   
 
 public partial class Program { }
-
-internal sealed class BearerSecuritySchemeTransformer(Microsoft.AspNetCore.Authentication.IAuthenticationSchemeProvider authenticationSchemeProvider) : IOpenApiDocumentTransformer
-{
-    public async Task TransformAsync(OpenApiDocument document, OpenApiDocumentTransformerContext context, CancellationToken cancellationToken)
-    {
-        var authenticationSchemes = await authenticationSchemeProvider.GetAllSchemesAsync();
-        if (authenticationSchemes.Any(authScheme => authScheme.Name == "Bearer"))
-        {
-            var requirements = new Dictionary<string, OpenApiSecurityScheme>
-            {
-                ["Bearer"] = new OpenApiSecurityScheme
-                {
-                    Type = SecuritySchemeType.Http,
-                    Scheme = "bearer",
-                    In = ParameterLocation.Header,
-                    BearerFormat = "Json Web Token"
-                }
-            };
-            document.Components ??= new OpenApiComponents();
-            document.Components.SecuritySchemes = requirements;
-
-            foreach (var operation in document.Paths.Values.SelectMany(path => path.Operations))
-            {
-                operation.Value.Security.Add(new OpenApiSecurityRequirement
-                {
-                    [new OpenApiSecurityScheme { Reference = new OpenApiReference { Id = "Bearer", Type = ReferenceType.SecurityScheme } }] = Array.Empty<string>()
-                });
-            }
-        }
-    }
-}

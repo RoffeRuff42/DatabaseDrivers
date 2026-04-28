@@ -12,6 +12,7 @@ namespace TodoApi.Controllers
     /// <summary>
     /// Controller that manages todo items.
     /// Provides endpoints to list, retrieve, create, update and delete todos.
+    /// Authentication and authorization are handled via JWT tokens; the user id is extracted from token claims.
     /// </summary>
     [ApiController]
     [Route("api/v{version:apiVersion}/todos")]
@@ -36,15 +37,14 @@ namespace TodoApi.Controllers
         }
 
         /// <summary>
-        /// Retrieves a paged list of todos.
+        /// Retrieves a paged list of todos for the authenticated user.
         /// </summary>
         /// <param name="page">Page number (1-based). Defaults to 1.</param>
         /// <param name="pageSize">Number of items per page. Defaults to 10.</param>
         /// <param name="search">Optional search term to filter by title.</param>
-        /// <param name="ticketId">Ticket id used to validate the user session.</param>
-        /// <returns>Returns 200 OK with a list of <see cref="TodoResponseDto"/> items.</returns>
+        /// <returns>Returns 200 OK with a list of <see cref="TodoResponseDto"/> items belonging to the authenticated user.</returns>
         /// <response code="200">Successfully retrieved a page of todos.</response>
-        /// <response code="401">If the provided ticketId is not valid.</response>
+        /// <response code="401">If the request is not authenticated or the JWT token is invalid.</response>
         /// <response code="429">When rate limit is exceeded.</response>
         [HttpGet]
         [MapToApiVersion(1.0)]
@@ -56,7 +56,7 @@ namespace TodoApi.Controllers
 
             return Ok(todos);
         }
-        [HttpGet]
+        [HttpGet("v2")]
         [MapToApiVersion(2.0)]
         public async Task<IActionResult> GetTodosV2(
          int page = 1,
@@ -71,14 +71,13 @@ namespace TodoApi.Controllers
             return Ok(todos);
         }
         /// <summary>
-        /// Retrieves a single todo by id.
+        /// Retrieves a single todo by id for the authenticated user.
         /// </summary>
         /// <param name="id">The id of the todo to fetch.</param>
-        /// <param name="ticketId">Ticket id used to validate the user session.</param>
-        /// <returns>Returns 200 OK with the requested <see cref="TodoResponseDto"/>.</returns>
+        /// <returns>Returns 200 OK with the requested <see cref="TodoResponseDto"/> if it belongs to the authenticated user.</returns>
         /// <response code="200">Todo item found and returned.</response>
-        /// <response code="404">Todo item with the specified id was not found.</response>
-        /// <response code="401">If the provided ticketId is not valid.</response>
+        /// <response code="404">Todo item with the specified id was not found (or does not belong to the authenticated user).</response>
+        /// <response code="401">If the request is not authenticated or the JWT token is invalid.</response>
         /// <response code="429">When rate limit is exceeded.</response>
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTodo(int id)
@@ -93,13 +92,13 @@ namespace TodoApi.Controllers
         }
 
         /// <summary>
-        /// Creates a new todo item.
+        /// Creates a new todo item for the authenticated user.
         /// </summary>
-        /// <param name="dto">The create DTO containing the todo data and ticket id.</param>
+        /// <param name="dto">The create DTO containing the todo data.</param>
         /// <returns>Returns 201 Created with the created <see cref="TodoResponseDto"/>.</returns>
         /// <response code="201">Todo was created successfully.</response>
         /// <response code="400">If the supplied DTO is invalid.</response>
-        /// <response code="401">If the provided ticketId is not valid.</response>
+        /// <response code="401">If the request is not authenticated or the JWT token is invalid.</response>
         /// <response code="429">When rate limit is exceeded.</response>
         [HttpPost]
         public async Task<IActionResult> CreateTodo(CreateTodoDto dto)
@@ -113,15 +112,15 @@ namespace TodoApi.Controllers
         }
 
         /// <summary>
-        /// Updates an existing todo item.
+        /// Updates an existing todo item for the authenticated user.
         /// </summary>
         /// <param name="id">The id of the todo to update.</param>
-        /// <param name="dto">The update DTO containing the new values and ticket id.</param>
+        /// <param name="dto">The update DTO containing the new values.</param>
         /// <returns>Returns 204 No Content on success.</returns>
         /// <response code="204">Update successful.</response>
         /// <response code="400">If the supplied DTO is invalid.</response>
-        /// <response code="404">If no todo with the given id exists.</response>
-        /// <response code="401">If the provided ticketId is not valid.</response>
+        /// <response code="404">If no todo with the given id exists (or it does not belong to the authenticated user).</response>
+        /// <response code="401">If the request is not authenticated or the JWT token is invalid.</response>
         /// <response code="429">When rate limit is exceeded.</response>
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateTodo(int id, UpdateTodoDto dto)
@@ -136,14 +135,13 @@ namespace TodoApi.Controllers
         }
 
         /// <summary>
-        /// Deletes a todo item by id.
+        /// Deletes a todo item by id for the authenticated user.
         /// </summary>
         /// <param name="id">The id of the todo to delete.</param>
-        /// <param name="ticketId">Ticket id used to validate the user session.</param>
         /// <returns>Returns 204 No Content on success.</returns>
         /// <response code="204">Delete successful.</response>
-        /// <response code="404">If no todo with the given id exists.</response>
-        /// <response code="401">If the provided ticketId is not valid.</response>
+        /// <response code="404">If no todo with the given id exists (or it does not belong to the authenticated user).</response>
+        /// <response code="401">If the request is not authenticated or the JWT token is invalid.</response>
         /// <response code="429">When rate limit is exceeded.</response>
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTodo(int id)

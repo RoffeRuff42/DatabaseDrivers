@@ -1,11 +1,21 @@
-using Microsoft.AspNetCore.RateLimiting;
-using Scalar.AspNetCore;
-using UserApi.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using Scalar.AspNetCore;
 using System.Text;
+using UserApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+//activates DI validation
+builder.Host.UseDefaultServiceProvider((context, options) =>
+{
+    //prevents "Captive Dependencies" 
+    options.ValidateScopes = builder.Environment.IsDevelopment();
+    //ensures registration
+    options.ValidateOnBuild = builder.Environment.IsDevelopment();
+});
 
 // JWT Authentication Configuration
 var jwtKey = builder.Configuration["Jwt:Key"];
@@ -16,6 +26,39 @@ var jwtAudience = builder.Configuration["Jwt:Audience"];
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+
+builder.Services.AddSwaggerGen(options =>
+{
+    var currentDirectory = AppContext.BaseDirectory;
+    var xmlFiles = Directory.GetFiles(currentDirectory, "*.xml");
+    foreach (var xmlFile in xmlFiles)
+    {
+        options.IncludeXmlComments(xmlFile);
+    }
+
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        In = ParameterLocation.Header,
+        BearerFormat = "JWT"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 //Ratelimiting
 builder.Services.AddRateLimiter(options =>
@@ -51,17 +94,27 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
 
-builder.Services.AddOpenApi();
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
-    app.MapScalarApiReference();
+    app.UseSwagger(options =>
+    {
+        options.RouteTemplate = "openapi/{documentName}.json";
+    });
+    app.MapScalarApiReference(options =>
+    {
+        options.WithOpenApiRoutePattern("/openapi/v1.json");
+    });
+    app.UseCors("DevelopmentPolicy");
+}
+else
+{
+    app.UseCors("ProductionPolicy");
 }
 
 app.UseHttpsRedirection();

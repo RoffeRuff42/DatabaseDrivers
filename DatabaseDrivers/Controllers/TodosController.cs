@@ -37,7 +37,7 @@ namespace TodoApi.Controllers
         }
 
         /// <summary>
-        /// Retrieves a paged list of todos for the authenticated user.
+        /// Retrieves a paged list of todos for the authenticated user (version 1.0).
         /// </summary>
         /// <param name="page">Page number (1-based). Defaults to 1.</param>
         /// <param name="pageSize">Number of items per page. Defaults to 10.</param>
@@ -56,6 +56,18 @@ namespace TodoApi.Controllers
 
             return Ok(todos);
         }
+
+        /// <summary>
+        /// Retrieves a paged list of todos for the authenticated user (version 2.0).
+        /// </summary>
+        /// <param name="page">Page number (1-based). Defaults to 1.</param>
+        /// <param name="pageSize">Number of items per page. Defaults to 10.</param>
+        /// <param name="search">Optional search term to filter by title.</param>
+        /// <param name="isDone">Optional filter to retrieve only completed or pending todos.</param>
+        /// <returns>Returns 200 OK with a list of <see cref="TodoResponseDto"/> items belonging to the authenticated user.</returns>
+        /// <response code="200">Successfully retrieved a page of todos.</response>
+        /// <response code="401">If the request is not authenticated or the JWT token is invalid.</response>
+        /// <response code="429">When rate limit is exceeded.</response>
         [HttpGet("v2")]
         [MapToApiVersion(2.0)]
         public async Task<IActionResult> GetTodosV2(

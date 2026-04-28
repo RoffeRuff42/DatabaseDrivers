@@ -18,9 +18,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseDefaultServiceProvider((context, options) =>
 {
     //prevents "Captive Dependencies" 
-    options.ValidateScopes = true;
+    options.ValidateScopes = builder.Environment.IsDevelopment();
     //ensures registration
-    options.ValidateOnBuild = true;
+    options.ValidateOnBuild = builder.Environment.IsDevelopment();
 });
 
 // Choose database based on environment

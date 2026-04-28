@@ -15,7 +15,7 @@ public class ExternalApiClient : IExternalApiClient
         _logger = logger;
 
         // Fetch values from User Secrets or Environment Variables
-        var headerName = _config["ExternalApiConfig:HeaderName"] ?? throw new ArgumentNullException("External API header name is missing"); 
+        var headerName = _config["ExternalApiConfig:HeaderName"] ?? throw new ArgumentNullException("External API header name is missing");
         var apiKey = _config["ExternalApiConfig:ApiKey"] ?? throw new ArgumentNullException("External API Key is missing");
 
         // We add the key to the headers so it's sent with every request

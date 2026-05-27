@@ -7,18 +7,21 @@ DatabaseDrivers is a .NET 9 solution with two ASP.NET Core APIs. The main servic
 ## Architecture
 
 ```mermaid
-flowchart LR
-    Client["Client / Scalar UI"]
-    UserApi["User API<br/>ServiceB/UserApi.csproj<br/>https://localhost:7194"]
-    TodoApi["Todo API<br/>DatabaseDrivers/TodoApi.csproj<br/>https://localhost:7276"]
-    SQLite["SQLite<br/>todo_app.db"]
-    ZenQuotes["ZenQuotes API"]
+graph TD
+    Client["Client / Frontend UI<br/>(Live Server: 5500)"]
+    UserApi["User API (Azure CA)<br/>DatabaseDrivers/UserApi<br/>https://localhost:7194"]
+    TodoApi["Todo API (Azure CA)<br/>DatabaseDrivers/TodoApi<br/>https://localhost:7276"]
+    SQLite[("SQLite<br/>todo_app.db")]
+    ZenQuotes["ZenQuotes API (External)"]
+    OpenAI["OpenAI API (External)"]
 
     Client -->|"POST /api/auth/login"| UserApi
-    UserApi -->|"JWT token"| Client
-    Client -->|"Bearer token"| TodoApi
+    UserApi -->|"Returns JWT-token"| Client
+    Client -->|"Call with Bearer token"| TodoApi
+    
     TodoApi --> SQLite
-    TodoApi -->|"GET /api/v1/quotes/random"| ZenQuotes
+    TodoApi -->|"GET <br/>/api/v1/quotes/random"| ZenQuotes
+    TodoApi -->|"POST <br/>/api/v1/generateDesc"| OpenAI
 ```
 
 The User API is responsible for login and JWT creation. The Todo API validates the JWT and uses the user id claim to scope todo data to the authenticated user. The services currently cooperate through this JWT flow: the client logs in through the User API, then sends the issued token to the Todo API. The Todo API stores todos in SQLite and calls ZenQuotes through the quote endpoint.

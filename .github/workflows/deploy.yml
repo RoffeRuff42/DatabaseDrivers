@@ -1,0 +1,84 @@
+# -----------------------------
+# This pipeline logs in to azure and the container registry
+# It then builds our two images and pushes them to the container registry
+# Then the container apps gets updated with our new images from the registry
+# -----------------------------
+
+name: Deploy to azure
+
+on:
+  push:
+    branches: [ "main" ]
+  # workflow dispatch should add a button in github for manual deploy
+  workflow_dispatch:
+
+jobs:
+  deploy:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Login to Azure Container Registry
+        run: az acr login --name acrinfrastructureinnovators
+
+# -----------------------------
+# Build TodoApi image
+# -----------------------------
+      
+      - name: Build TodoApi Docker image
+        run: |
+            docker build -t acrinfrastructureinnovators.azurecr.io/todoapi:${{ github.sha }} ./DatabaseDrivers
+# -----------------------------
+# Build UserApi image
+# -----------------------------
+
+      - name: Build UserApi Docker image
+        run: |
+            docker build -t acrinfrastructureinnovators.azurecr.io/userapi:${{ github.sha }} ./ServiceB
+
+# -----------------------------
+# Push TodoApi image
+# -----------------------------
+
+      - name: Push TodoApi image
+        run: |
+            docker push acrinfrastructureinnovators.azurecr.io/todoapi:${{ github.sha }}
+
+# -----------------------------
+# Push UserApi image
+# -----------------------------
+
+      - name: Push UserApi image
+        run: |
+            docker push acrinfrastructureinnovators.azurecr.io/userapi:${{ github.sha }}
+
+# -----------------------------
+# Deploy TodoApi
+# -----------------------------
+
+      - name: Deploy TodoApi to Azure Container App
+        run: |
+          az containerapp update \
+            --name app-todo-api-innovators \
+            --resource-group rg-Infrastructure-Innovators \
+            --image acrinfrastructureinnovators.azurecr.io/todoapi:${{ github.sha }}
+
+# -----------------------------
+# Deploy UserApi
+# -----------------------------
+
+      - name: Deploy UserApi to Azure Container App
+        run: |
+          az containerapp update \
+            --name app-user-api-innovators  \
+            --resource-group rg-Infrastructure-Innovators \
+            --image acrinfrastructureinnovators.azurecr.io/userapi:${{ github.sha }}

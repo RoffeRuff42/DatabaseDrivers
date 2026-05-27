@@ -8,8 +8,8 @@ name: Deploy to azure
 
 on:
   push:
-    branches: [ "main" ]
-  # workflow dispatch should add a button in github for manual deploy
+    branches: [ "main", "feature/pipeline/lh" ]
+  # workflow dispatch should add a button in github for manual deploy testing when it exists in main
   workflow_dispatch:
 
 jobs:

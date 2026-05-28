@@ -1,16 +1,17 @@
-# This workflow will build a .NET project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
 
-name: .NET
+# -----------------------------
+# Restores the project, then builds and runs all tests in the solution
+# Then it builds our two docker files to make sure they are functional
+# -----------------------------
+
+name: Build and Test
 
 on:
-  push:
-    branches: [ "main", "dev" ]
   pull_request:
     branches: [ "main", "dev" ]
 
 jobs:
-  build:
+  ci:
 
     runs-on: ubuntu-latest
 
@@ -21,9 +22,18 @@ jobs:
       with:
         dotnet-version: 9.0.x
         #cache: true
+    
     - name: Restore dependencies
       run: dotnet restore
+    
     - name: Build
       run: dotnet build --configuration Release --no-restore
+    
     - name: Test
       run: dotnet test --configuration Release --no-build --verbosity normal
+    
+    - name: Build TodoApi Docker image 
+      run: docker build -t todoapi ./DatabaseDrivers 
+    
+    - name: Build UserApi Docker image 
+      run: docker build -t userapi ./ServiceB

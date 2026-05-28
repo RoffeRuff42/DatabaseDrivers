@@ -4,6 +4,7 @@
 # Then the container apps gets updated with our new images from the registry
 # -----------------------------
 
+
 name: Deploy to azure
 
 on:

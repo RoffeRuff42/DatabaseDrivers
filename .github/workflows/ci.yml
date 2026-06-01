@@ -22,7 +22,13 @@ jobs:
       with:
         dotnet-version: 9.0.x
         #cache: true
-    
+
+    #Azure login
+    - name: Azure login
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
     - name: Restore dependencies
       run: dotnet restore
     

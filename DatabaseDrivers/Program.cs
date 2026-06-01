@@ -3,14 +3,16 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
 using System.Text;
 using TodoApi.Clients;
 using TodoApi.Data;
 using TodoApi.Extensions;
 using TodoApi.Filters;
+using TodoApi.Options;
 using TodoApi.Services;
-using Microsoft.OpenApi.Models;
+using Azure.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -65,6 +67,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
          };
      });
 
+var keyVaultUrl = builder.Configuration["KeyVault:Url"];
+
+if (!string.IsNullOrWhiteSpace(keyVaultUrl))
+{
+    builder.Configuration.AddAzureKeyVault(
+        new Uri(keyVaultUrl),
+        new DefaultAzureCredential());
+}
+
 builder.Services.AddAuthorization();
 
 // API Versioning Configuration
@@ -99,6 +110,25 @@ builder.Services.AddHttpClient<IQuoteService, QuoteService>(client =>
     client.BaseAddress = new Uri("https://zenquotes.io/");
     client.Timeout = TimeSpan.FromSeconds(30);
 })
+.AddStandardResilienceHandler(options =>
+{
+    options.Retry.MaxRetryAttempts = 3;
+    options.Retry.Delay = TimeSpan.FromSeconds(2);
+    options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
+});
+
+//Add OpenAI options from configuration
+builder.Services.Configure<OpenAiOptions>(
+    builder.Configuration.GetSection(OpenAiOptions.SectionName));
+
+builder.Services.PostConfigure<OpenAiOptions>(options =>
+{
+    if (string.IsNullOrWhiteSpace(options.ApiKey))
+    {
+        options.ApiKey = builder.Configuration["AI-API-KEY"];
+    }
+});
+builder.Services.AddHttpClient<IAiClient, OpenAiClient>()
 .AddStandardResilienceHandler(options =>
 {
     options.Retry.MaxRetryAttempts = 3;

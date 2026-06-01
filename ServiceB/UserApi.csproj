@@ -7,6 +7,7 @@
     <UserSecretsId>b22f295d-f3d5-489b-90f0-6e8fdf41d3c2</UserSecretsId>
 	<GenerateDocumentationFile>True</GenerateDocumentationFile>
 	<NoWarn>$(NoWarn);1591</NoWarn>
+	<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 
   <ItemGroup>
@@ -31,6 +32,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.15" />
     <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.4.0" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
     <PackageReference Include="Scalar.AspNetCore" Version="2.13.17" />
 	<PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
 	<PackageReference Include="Microsoft.OpenApi" Version="1.6.29" />

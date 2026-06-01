@@ -1,0 +1,45 @@
+
+# -----------------------------
+# Restores the project, then builds and runs all tests in the solution
+# Then it builds our two docker files to make sure they are functional
+# -----------------------------
+
+name: Build and Test
+
+on:
+  pull_request:
+    branches: [ "main", "dev" ]
+
+jobs:
+  ci:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.0.x
+        #cache: true
+
+    #Azure login
+    - name: Azure login
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+    
+    - name: Test
+      run: dotnet test --configuration Release --no-build --verbosity normal
+    
+    - name: Build TodoApi Docker image 
+      run: docker build -t todoapi ./DatabaseDrivers 
+    
+    - name: Build UserApi Docker image 
+      run: docker build -t userapi ./ServiceB

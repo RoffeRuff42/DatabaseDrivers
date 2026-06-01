@@ -2,7 +2,10 @@
 
 [![.NET](https://github.com/RoffeRuff42/DatabaseDrivers/actions/workflows/dotnet.yml/badge.svg)](https://github.com/RoffeRuff42/DatabaseDrivers/actions/workflows/dotnet.yml)
 
-DatabaseDrivers is a .NET 9 solution with two ASP.NET Core APIs. The main service is a Todo API backed by SQLite, protected with JWT authentication, and documented through Scalar/OpenAPI. A separate User API issues JWT tokens for the demo users used by the Todo API.
+**DatabaseDrivers** is part of a fullstack project. It is a .NET 9 solution with two ASP.NET Core APIs. The main service is a Todo API backed by SQLite, protected with JWT authentication, and documented through Scalar/OpenAPI. A separate User API issues JWT tokens for the demo users used by the Todo API. The services run as microservices in Azure Container Apps (ACA). 
+
+The purpose of the app is to create structure in everyday life using a todo list. Users can get AI-generated descriptions for todos as well as random quotes (ZenQuotes).
+The app is linked to a frontend, to see that project click here: [WebWizard Frontend](https://github.com/Grahnnen/WebbWizards) 
 
 ## Architecture
 
@@ -212,6 +215,50 @@ The GitHub Actions pipeline is linked from the status badge at the top of this R
 
 [GitHub Actions: .NET](https://github.com/RoffeRuff42/DatabaseDrivers/actions/workflows/dotnet.yml)
 
+
+## Runbook Light
+
+### 1 Purpose and Architecture
+The purpose of the app is to create structure in everyday life using a todo list. Users can get AI-generated descriptions for todos as well as random quotes (ZenQuotes). 
+The services run as microservices in Azure Container Apps (ACA) with a SQLite database. 
+
+```mermaid
+graph TD 
+    Client["Client / Frontend UI"]
+    UserApi["User API<br/>ServiceB/UserApi.csproj<br/>https://localhost:7194"]
+    TodoApi["Todo API<br/>DatabaseDrivers/TodoApi.csproj<br/>https://localhost:7276"]
+    SQLite["SQLite<br/>todo_app.db"]
+    ZenQuotes["ZenQuotes API"]
+    OpenAI["OpenAI API"]
+
+    Client -->|"POST /api/auth/login"| UserApi
+    UserApi -->|"JWT token"| Client
+    Client -->|"Bearer token"| TodoApi
+    TodoApi --> SQLite
+    TodoApi -->|"GET /api/v1/quotes/random"| ZenQuotes
+    TodoApi -->|"POST /api/v1/generateDescription"| OpenAI
+```
+
+### 2 Dependencies
+* SQLite (todo_app.db): If it is down, the app crashes with a 500 error.
+* OpenAI and ZenQuotes: If they are down, generating descriptions and random quotes will not work, but standard todos will still function. An error message will be displayed.
+* Key Vault: Handles our API keys securely. It is required during startup, otherwise an error message is thrown.
+
+### 3 Deployment and Observability
+* Deployment: Happens automatically via the GitHub Actions pipeline on push to main.
+* Logs and errors: Found in the Azure Portal → Log Analytics Workspace: log-innovators-prod.
+* Performance: Measured in the Azure Portal → Application Insights: appi-innovators-prod.
+
+### 4 Troubleshooting a Broken Deploy (Checklist)
+* Are the containers running? → Check the status of the Container Apps in the Azure Portal.
+* Check CORS / Environment Variables → Does the frontend console show a NetworkError? Verify that env.js has the correct production URL to the backend.
+* Read the logs → Go to Application Insights and search for Exceptions or 500 errors.
+
+### 5 Rollback Plan
+* Go to GitHub Actions and redeploy the previous version (the last known working build).
+* Verify functionality using the health and todos endpoints.
+* Monitor metrics and logs for 10–15 minutes afterward.
+
 ## Notes
 
 - `ServiceB` is the User API even though the folder name is not descriptive.
@@ -220,3 +267,5 @@ The GitHub Actions pipeline is linked from the status badge at the top of this R
 - Todo data is scoped by the authenticated user id from the JWT `NameIdentifier` claim.
 - The active service-to-service relationship is the JWT-based authentication flow: `UserApi` issues the token and `TodoApi` validates and uses it.
 - `ServiceC` and `ServiceShared` exist in the repository, but they are not part of the active `DatabaseDrivers.sln` setup.
+
+

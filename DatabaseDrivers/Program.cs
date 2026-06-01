@@ -1,4 +1,6 @@
 using Asp.Versioning;
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +14,6 @@ using TodoApi.Extensions;
 using TodoApi.Filters;
 using TodoApi.Options;
 using TodoApi.Services;
-using Azure.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -75,6 +76,22 @@ if (!string.IsNullOrWhiteSpace(keyVaultUrl))
         new Uri(keyVaultUrl),
         new DefaultAzureCredential());
 }
+builder.Services.AddSingleton<SecretClient>(serviceProvider =>
+{
+    var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+
+    var keyVaultUrl = configuration["KeyVault:Url"];
+
+    if (string.IsNullOrWhiteSpace(keyVaultUrl))
+    {
+        throw new InvalidOperationException("KeyVault:Url is missing.");
+    }
+
+    return new SecretClient(
+        new Uri(keyVaultUrl),
+        new DefaultAzureCredential()
+    );
+});
 
 builder.Services.AddAuthorization();
 

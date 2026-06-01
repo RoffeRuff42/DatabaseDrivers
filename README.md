@@ -220,9 +220,9 @@ We maintain two distinct environments for this project: **Local** (for developme
 
 | Feature / Configuration | Local Environment | Production Environment (Azure) |
 | :--- | :--- | :--- |
-| **Frontend URL** | `http://localhost:5500` (Live Server) | *[Our deployed frontend URL here]* |
-| **Todo API URL** | `https://localhost:7276` | `[https://app-todo-api-innovators.[...].azurecontainerapps.io](https://app-todo-api-innovators.kindcliff-59f7c0ed.germanywestcentral.azurecontainerapps.io/ )` |
-| **User API URL** | `https://localhost:7194` | `[https://app-user-api-innovators.[...].azurecontainerapps.io](https://app-user-api-innovators.kindcliff-59f7c0ed.germanywestcentral.azurecontainerapps.io/ )` |
+| **Frontend URL** | `http://localhost:5500` (Live Server) | *[Deployed frontend via Github pages](https://Grahnnen.github.io/WebbWizards/)* |
+| **Todo API URL** | `https://localhost:7276` | `[https://app-todo-api-innovators.[...].azurecontainerapps.io](https://app-todo-api-innovators.kindcliff-59f7c0ed.germanywestcentral.azurecontainerapps.io/)` |
+| **User API URL** | `https://localhost:7194` | `[https://app-user-api-innovators.[...].azurecontainerapps.io](https://app-user-api-innovators.kindcliff-59f7c0ed.germanywestcentral.azurecontainerapps.io/)` |
 | **Database** | SQLite (`todo_app.db` - local file) | SQLite (Persistent volume inside Azure Container App) |
 | **Secrets & Keys** | Stored locally in `secrets.json` | Secured in **Azure Key Vault** |
 | **AI Integration** | API keys stored locally in `secrets.json` | Managed Identity via Azure Container Apps (RBAC) |

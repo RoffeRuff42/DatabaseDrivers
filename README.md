@@ -215,6 +215,18 @@ The GitHub Actions pipeline is linked from the status badge at the top of this R
 
 [GitHub Actions: .NET](https://github.com/RoffeRuff42/DatabaseDrivers/actions/workflows/dotnet.yml)
 
+## Environments 
+We maintain two distinct environments for this project: **Local** (for development and testing) and **Production** (the live application in Azure). 
+
+| Feature / Configuration | Local Environment | Production Environment (Azure) |
+| :--- | :--- | :--- |
+| **Frontend URL** | `http://localhost:5500` (Live Server) | *[Our deployed frontend URL here]* |
+| **Todo API URL** | `https://localhost:7276` | `[https://app-todo-api-innovators.[...].azurecontainerapps.io](https://app-todo-api-innovators.kindcliff-59f7c0ed.germanywestcentral.azurecontainerapps.io/ )` |
+| **User API URL** | `https://localhost:7194` | `[https://app-user-api-innovators.[...].azurecontainerapps.io](https://app-user-api-innovators.kindcliff-59f7c0ed.germanywestcentral.azurecontainerapps.io/ )` |
+| **Database** | SQLite (`todo_app.db` - local file) | SQLite (Persistent volume inside Azure Container App) |
+| **Secrets & Keys** | Stored locally in `secrets.json` | Secured in **Azure Key Vault** |
+| **AI Integration** | API keys stored locally in `secrets.json` | Managed Identity via Azure Container Apps (RBAC) |
+| **Deployment** | Manual execution via IDE/Terminal | Automatic via **GitHub Actions** on push to `main` |
 
 ## Runbook Light
 

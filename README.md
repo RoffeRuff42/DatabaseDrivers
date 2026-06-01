@@ -2,23 +2,29 @@
 
 [![.NET](https://github.com/RoffeRuff42/DatabaseDrivers/actions/workflows/dotnet.yml/badge.svg)](https://github.com/RoffeRuff42/DatabaseDrivers/actions/workflows/dotnet.yml)
 
-DatabaseDrivers is a .NET 9 solution with two ASP.NET Core APIs. The main service is a Todo API backed by SQLite, protected with JWT authentication, and documented through Scalar/OpenAPI. A separate User API issues JWT tokens for the demo users used by the Todo API.
+**DatabaseDrivers** is part of a fullstack project. It is a .NET 9 solution with two ASP.NET Core APIs. The main service is a Todo API backed by SQLite, protected with JWT authentication, and documented through Scalar/OpenAPI. A separate User API issues JWT tokens for the demo users used by the Todo API. The services run as microservices in Azure Container Apps (ACA). 
+
+The purpose of the app is to create structure in everyday life using a todo list. Users can get AI-generated descriptions for todos as well as random quotes (ZenQuotes).
+The app is linked to a frontend, to see that project click here: [WebWizard Frontend](https://github.com/Grahnnen/WebbWizards) 
 
 ## Architecture
 
 ```mermaid
-flowchart LR
-    Client["Client / Scalar UI"]
-    UserApi["User API<br/>ServiceB/UserApi.csproj<br/>https://localhost:7194"]
-    TodoApi["Todo API<br/>DatabaseDrivers/TodoApi.csproj<br/>https://localhost:7276"]
-    SQLite["SQLite<br/>todo_app.db"]
-    ZenQuotes["ZenQuotes API"]
+graph TD
+    Client["Client / Frontend UI<br/>(Live Server: 5500)"]
+    UserApi["User API (Azure CA)<br/>DatabaseDrivers/UserApi<br/>https://localhost:7194"]
+    TodoApi["Todo API (Azure CA)<br/>DatabaseDrivers/TodoApi<br/>https://localhost:7276"]
+    SQLite[("SQLite<br/>todo_app.db")]
+    ZenQuotes["ZenQuotes API (External)"]
+    OpenAI["OpenAI API (External)"]
 
     Client -->|"POST /api/auth/login"| UserApi
-    UserApi -->|"JWT token"| Client
-    Client -->|"Bearer token"| TodoApi
+    UserApi -->|"Returns JWT-token"| Client
+    Client -->|"Call with Bearer token"| TodoApi
+    
     TodoApi --> SQLite
-    TodoApi -->|"GET /api/v1/quotes/random"| ZenQuotes
+    TodoApi -->|"GET <br/>/api/v1/quotes/random"| ZenQuotes
+    TodoApi -->|"POST <br/>/api/v1/generateDesc"| OpenAI
 ```
 
 The User API is responsible for login and JWT creation. The Todo API validates the JWT and uses the user id claim to scope todo data to the authenticated user. The services currently cooperate through this JWT flow: the client logs in through the User API, then sends the issued token to the Todo API. The Todo API stores todos in SQLite and calls ZenQuotes through the quote endpoint.
@@ -209,6 +215,62 @@ The GitHub Actions pipeline is linked from the status badge at the top of this R
 
 [GitHub Actions: .NET](https://github.com/RoffeRuff42/DatabaseDrivers/actions/workflows/dotnet.yml)
 
+## Environments 
+We maintain two distinct environments for this project: **Local** (for development and testing) and **Production** (the live application in Azure). 
+
+| Feature / Configuration | Local Environment | Production Environment (Azure) |
+| :--- | :--- | :--- |
+| **Frontend URL** | `http://localhost:5500` (Live Server) | *[Deployed frontend via Github pages](https://Grahnnen.github.io/WebbWizards/)* |
+| **Todo API URL** | `https://localhost:7276` | `[https://app-todo-api-innovators.[...].azurecontainerapps.io](https://app-todo-api-innovators.kindcliff-59f7c0ed.germanywestcentral.azurecontainerapps.io/)` |
+| **User API URL** | `https://localhost:7194` | `[https://app-user-api-innovators.[...].azurecontainerapps.io](https://app-user-api-innovators.kindcliff-59f7c0ed.germanywestcentral.azurecontainerapps.io/)` |
+| **Database** | SQLite (`todo_app.db` - local file) | SQLite (Persistent volume inside Azure Container App) |
+| **Secrets & Keys** | Stored locally in `secrets.json` | Secured in **Azure Key Vault** |
+| **AI Integration** | API keys stored locally in `secrets.json` | Managed Identity via Azure Container Apps (RBAC) |
+| **Deployment** | Manual execution via IDE/Terminal | Automatic via **GitHub Actions** on push to `main` |
+
+## Runbook Light
+
+### 1 Purpose and Architecture
+The purpose of the app is to create structure in everyday life using a todo list. Users can get AI-generated descriptions for todos as well as random quotes (ZenQuotes). 
+The services run as microservices in Azure Container Apps (ACA) with a SQLite database. 
+
+```mermaid
+graph TD 
+    Client["Client / Frontend UI"]
+    UserApi["User API<br/>ServiceB/UserApi.csproj<br/>https://localhost:7194"]
+    TodoApi["Todo API<br/>DatabaseDrivers/TodoApi.csproj<br/>https://localhost:7276"]
+    SQLite["SQLite<br/>todo_app.db"]
+    ZenQuotes["ZenQuotes API"]
+    OpenAI["OpenAI API"]
+
+    Client -->|"POST /api/auth/login"| UserApi
+    UserApi -->|"JWT token"| Client
+    Client -->|"Bearer token"| TodoApi
+    TodoApi --> SQLite
+    TodoApi -->|"GET /api/v1/quotes/random"| ZenQuotes
+    TodoApi -->|"POST /api/v1/generateDescription"| OpenAI
+```
+
+### 2 Dependencies
+* SQLite (todo_app.db): If it is down, the app crashes with a 500 error.
+* OpenAI and ZenQuotes: If they are down, generating descriptions and random quotes will not work, but standard todos will still function. An error message will be displayed.
+* Key Vault: Handles our API keys securely. It is required during startup, otherwise an error message is thrown.
+
+### 3 Deployment and Observability
+* Deployment: Happens automatically via the GitHub Actions pipeline on push to main.
+* Logs and errors: Found in the Azure Portal → Log Analytics Workspace: log-innovators-prod.
+* Performance: Measured in the Azure Portal → Application Insights: appi-innovators-prod.
+
+### 4 Troubleshooting a Broken Deploy (Checklist)
+* Are the containers running? → Check the status of the Container Apps in the Azure Portal.
+* Check CORS / Environment Variables → Does the frontend console show a NetworkError? Verify that env.js has the correct production URL to the backend.
+* Read the logs → Go to Application Insights and search for Exceptions or 500 errors.
+
+### 5 Rollback Plan
+* Go to GitHub Actions and redeploy the previous version (the last known working build).
+* Verify functionality using the health and todos endpoints.
+* Monitor metrics and logs for 10–15 minutes afterward.
+
 ## Notes
 
 - `ServiceB` is the User API even though the folder name is not descriptive.
@@ -217,3 +279,5 @@ The GitHub Actions pipeline is linked from the status badge at the top of this R
 - Todo data is scoped by the authenticated user id from the JWT `NameIdentifier` claim.
 - The active service-to-service relationship is the JWT-based authentication flow: `UserApi` issues the token and `TodoApi` validates and uses it.
 - `ServiceC` and `ServiceShared` exist in the repository, but they are not part of the active `DatabaseDrivers.sln` setup.
+
+

@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
 using System.Text;
+using UserApi.Extensions;
 using UserApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -59,6 +60,7 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
+builder.Services.AddCustomCors(builder.Configuration);
 
 //Ratelimiting
 builder.Services.AddRateLimiter(options =>
@@ -117,7 +119,7 @@ else
     app.UseCors("ProductionPolicy");
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.UseRateLimiter();
 

@@ -1,4 +1,4 @@
-﻿namespace TodoApi.Extensions
+﻿namespace UserApi.Extensions
 {
     public static class CorsExtensions
     {
@@ -9,14 +9,14 @@
                 // Policy for production
                 options.AddPolicy("ProductionPolicy", policy =>
                 {
-                    policy.WithOrigins(
-                        "http://localhost:5500/",
-                        "http://127.0.0.1:5500/")
-                          .AllowAnyOrigin()   // Godkänner din Live Server-port!
-                          .AllowAnyMethod()   // Godkänner POST, GET, etc.
-                          .AllowAnyHeader();  // Godkänner alla headers
+                        policy.WithOrigins(
+                            "http://localhost:5500/",
+                            "http://127.0.0.1:5500/")
+                              .AllowAnyOrigin()   // Godkänner din Live Server-port!
+                              .AllowAnyMethod()   // Godkänner POST, GET, etc.
+                              .AllowAnyHeader();  // Godkänner alla headers
 
-                });
+                    });
                 //    policy.WithOrigins("https://WebWizzardTodoApp.com")
                 //        .AllowAnyHeader()
                 //        .AllowAnyMethod()
@@ -33,16 +33,16 @@
                           .AllowAnyHeader();  // Godkänner alla headers
 
                 });
-                //policy.WithOrigins(
-                //    "https://localhost:7194", // UserApi HTTPS
-                //    "http://localhost:5226",  // UserApi HTTP
-                //    "https://localhost:7276", // TodoApi HTTPS
-                //    "http://localhost:5269"   // TodoApi HTTP
-                //)
-                //.AllowAnyHeader()
-                //.AllowAnyMethod()
-                //.AllowCredentials();
-            });
+                    //policy.WithOrigins(
+                    //    "https://localhost:7194", // UserApi HTTPS
+                    //    "http://localhost:5226",  // UserApi HTTP
+                    //    "https://localhost:7276", // TodoApi HTTPS
+                    //    "http://localhost:5269"   // TodoApi HTTP
+                    //)
+                        //.AllowAnyHeader()
+                        //.AllowAnyMethod()
+                        //.AllowCredentials();
+                });
             return services;
         }
     }

@@ -12,19 +12,15 @@
 
   <ItemGroup>
     <Compile Remove="Exceptions\**" />
-    <Compile Remove="Extensions\**" />
     <Compile Remove="Filters\**" />
     <Compile Remove="Middleware\**" />
     <Content Remove="Exceptions\**" />
-    <Content Remove="Extensions\**" />
     <Content Remove="Filters\**" />
     <Content Remove="Middleware\**" />
     <EmbeddedResource Remove="Exceptions\**" />
-    <EmbeddedResource Remove="Extensions\**" />
     <EmbeddedResource Remove="Filters\**" />
     <EmbeddedResource Remove="Middleware\**" />
     <None Remove="Exceptions\**" />
-    <None Remove="Extensions\**" />
     <None Remove="Filters\**" />
     <None Remove="Middleware\**" />
   </ItemGroup>

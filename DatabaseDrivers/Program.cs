@@ -17,6 +17,23 @@ using TodoApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var keyVaultUrl = builder.Configuration["KeyVault:Url"];
+
+if (!string.IsNullOrWhiteSpace(keyVaultUrl))
+{
+    builder.Configuration.AddAzureKeyVault(
+        new Uri(keyVaultUrl),
+        new DefaultAzureCredential());
+}
+
+// JWT Authentication Configuration
+var jwtKey = builder.Configuration["Jwt:Key"];
+var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+var jwtAudience = builder.Configuration["Jwt:Audience"];
+
+if (string.IsNullOrEmpty(jwtKey))
+    throw new InvalidOperationException("JWT token is missing.");
+
 //activates DI validation
 builder.Host.UseDefaultServiceProvider((context, options) =>
 {
@@ -38,11 +55,6 @@ else
         options.UseSqlite("Data Source=todo_app.db"));
 }
 
-// JWT Authentication Configuration
-var jwtKey = builder.Configuration["Jwt:Key"];
-var jwtIssuer = builder.Configuration["Jwt:Issuer"];
-var jwtAudience = builder.Configuration["Jwt:Audience"];
-
 // JWT Authentication and Authorization
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
      .AddJwtBearer(options =>
@@ -50,10 +62,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.TokenValidationParameters = new TokenValidationParameters
         {
           ValidateIssuer = true,
-          ValidateAudience = true,
+          ValidateAudience = false,
           ValidateLifetime = true,
           ValidateIssuerSigningKey = true,
-          ValidIssuer = jwtIssuer,
+          ValidIssuers = new[] { jwtIssuer, "TodoApi", "DatabaseDrivers" },
           ValidAudience = jwtAudience,
           IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey!))
         };
@@ -62,20 +74,24 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
          {
              OnAuthenticationFailed = context =>
              {
-                Console.WriteLine("JWT VALIDATION FAILED: " + context.Exception.Message);
-                return Task.CompletedTask; 
+                 var logger = context.HttpContext.RequestServices
+                                 .GetRequiredService<ILoggerFactory>()
+                                 .CreateLogger("JwtAuth");
+                 logger.LogError(context.Exception, "JWT authentication failed: {Message}", context.Exception.Message);
+                 return Task.CompletedTask;
+             },
+             OnTokenValidated = context =>
+             {
+                 var logger = context.HttpContext.RequestServices
+                                 .GetRequiredService<ILoggerFactory>()
+                                 .CreateLogger("JwtAuth");
+                 logger.LogInformation("Token validated for subject: {Sub}", context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value);
+                 return Task.CompletedTask;
              }
          };
      });
+builder.Services.AddAuthorization();
 
-var keyVaultUrl = builder.Configuration["KeyVault:Url"];
-
-if (!string.IsNullOrWhiteSpace(keyVaultUrl))
-{
-    builder.Configuration.AddAzureKeyVault(
-        new Uri(keyVaultUrl),
-        new DefaultAzureCredential());
-}
 builder.Services.AddSingleton<SecretClient>(serviceProvider =>
 {
     var configuration = serviceProvider.GetRequiredService<IConfiguration>();
@@ -92,8 +108,6 @@ builder.Services.AddSingleton<SecretClient>(serviceProvider =>
         new DefaultAzureCredential()
     );
 });
-
-builder.Services.AddAuthorization();
 
 // API Versioning Configuration
 builder.Services.AddApiVersioning(options =>

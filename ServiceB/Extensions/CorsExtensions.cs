@@ -10,9 +10,8 @@
                 options.AddPolicy("ProductionPolicy", policy =>
                 {
                         policy.WithOrigins(
-                            "http://localhost:5500/",
-                            "http://127.0.0.1:5500/")
-                              .AllowAnyOrigin()   // Godkänner din Live Server-port!
+                            "http://localhost:5500",
+                            "http://127.0.0.1:5500")
                               .AllowAnyMethod()   // Godkänner POST, GET, etc.
                               .AllowAnyHeader();  // Godkänner alla headers
 
@@ -26,9 +25,8 @@
                 options.AddPolicy("DevelopmentPolicy", policy =>
                 {
                     policy.WithOrigins(
-                           "http://localhost:5500/",
-                           "http://127.0.0.1:5500/")
-                          .AllowAnyOrigin()   // Godkänner din Live Server-port!
+                           "http://localhost:5500",
+                           "http://127.0.0.1:5500")
                           .AllowAnyMethod()   // Godkänner POST, GET, etc.
                           .AllowAnyHeader();  // Godkänner alla headers
 

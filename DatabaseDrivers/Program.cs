@@ -19,7 +19,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 var keyVaultUrl = builder.Configuration["KeyVault:Url"];
 
-if (!string.IsNullOrWhiteSpace(keyVaultUrl))
+if(!builder.Environment.IsDevelopment() && !string.IsNullOrWhiteSpace(keyVaultUrl))
 {
     builder.Configuration.AddAzureKeyVault(
         new Uri(keyVaultUrl),
@@ -29,6 +29,7 @@ if (!string.IsNullOrWhiteSpace(keyVaultUrl))
 // JWT Authentication Configuration
 var jwtKey = builder.Configuration["Jwt:Key"];
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+Console.WriteLine($"DEBUG: Den issuer som faktiskt läses in är: '{jwtIssuer}'");
 var jwtAudience = builder.Configuration["Jwt:Audience"];
 
 if (string.IsNullOrEmpty(jwtKey))
@@ -62,10 +63,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.TokenValidationParameters = new TokenValidationParameters
         {
           ValidateIssuer = true,
-          ValidateAudience = false,
+          ValidateAudience = true,
           ValidateLifetime = true,
           ValidateIssuerSigningKey = true,
-          ValidIssuers = new[] { jwtIssuer, "TodoApi", "DatabaseDrivers" },
+          ValidIssuer = jwtIssuer,
           ValidAudience = jwtAudience,
           IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey!))
         };

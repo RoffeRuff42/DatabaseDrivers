@@ -21,6 +21,7 @@ builder.Host.UseDefaultServiceProvider((context, options) =>
 // JWT Authentication Configuration
 var jwtKey = builder.Configuration["Jwt:Key"];
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+Console.WriteLine($"DEBUG: Den issuer som faktiskt läses in är: '{jwtIssuer}'");
 var jwtAudience = builder.Configuration["Jwt:Audience"];
 
 // Add services to the container.

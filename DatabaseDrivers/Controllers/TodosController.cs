@@ -113,7 +113,7 @@ namespace TodoApi.Controllers
         /// <response code="401">If the request is not authenticated or the JWT token is invalid.</response>
         /// <response code="429">When rate limit is exceeded.</response>
         [HttpPost]
-        public async Task<IActionResult> CreateTodo(CreateTodoDto dto)
+        public async Task<IActionResult> CreateTodo([FromBody] CreateTodoDto dto)
         {
             int userId = GetUserId();
             var createdTodo = await _service.CreateTodoAsync(dto, userId);
@@ -135,7 +135,7 @@ namespace TodoApi.Controllers
         /// <response code="401">If the request is not authenticated or the JWT token is invalid.</response>
         /// <response code="429">When rate limit is exceeded.</response>
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateTodo(int id, UpdateTodoDto dto)
+        public async Task<IActionResult> UpdateTodo(int id, [FromBody] UpdateTodoDto dto)
         {
             int userId = GetUserId();
             var updated = await _service.UpdateTodoAsync(id, dto, userId);

@@ -9,17 +9,11 @@
                 // Policy for production
                 options.AddPolicy("ProductionPolicy", policy =>
                 {
-                        policy.WithOrigins(
-                            "http://localhost:5500",
-                            "http://127.0.0.1:5500")
-                              .AllowAnyMethod()   // Godkänner POST, GET, etc.
-                              .AllowAnyHeader();  // Godkänner alla headers
+                        policy.WithOrigins("https://grahnnen.github.io")
+                              .AllowAnyMethod()   
+                              .AllowAnyHeader();
 
                     });
-                //    policy.WithOrigins("https://WebWizzardTodoApp.com")
-                //        .AllowAnyHeader()
-                //        .AllowAnyMethod()
-                //        .AllowCredentials();
 
                 // Policy for development
                 options.AddPolicy("DevelopmentPolicy", policy =>
@@ -27,20 +21,11 @@
                     policy.WithOrigins(
                            "http://localhost:5500",
                            "http://127.0.0.1:5500")
-                          .AllowAnyMethod()   // Godkänner POST, GET, etc.
-                          .AllowAnyHeader();  // Godkänner alla headers
+                          .AllowAnyMethod()   
+                          .AllowAnyHeader();
 
                 });
-                    //policy.WithOrigins(
-                    //    "https://localhost:7194", // UserApi HTTPS
-                    //    "http://localhost:5226",  // UserApi HTTP
-                    //    "https://localhost:7276", // TodoApi HTTPS
-                    //    "http://localhost:5269"   // TodoApi HTTP
-                    //)
-                        //.AllowAnyHeader()
-                        //.AllowAnyMethod()
-                        //.AllowCredentials();
-                });
+            });
             return services;
         }
     }

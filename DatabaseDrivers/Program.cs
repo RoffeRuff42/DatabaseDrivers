@@ -29,7 +29,7 @@ if(!builder.Environment.IsDevelopment() && !string.IsNullOrWhiteSpace(keyVaultUr
 // JWT Authentication Configuration
 var jwtKey = builder.Configuration["Jwt:Key"];
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
-Console.WriteLine($"DEBUG: Den issuer som faktiskt läses in är: '{jwtIssuer}'");
+Console.WriteLine($"DEBUG: The issuer that is actually being read is: '{jwtIssuer}'");
 var jwtAudience = builder.Configuration["Jwt:Audience"];
 
 if (string.IsNullOrEmpty(jwtKey))

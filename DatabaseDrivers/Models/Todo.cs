@@ -8,5 +8,9 @@
         public int UserId { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public string? Description { get; set; }
+        public string? DueDate { get; set; }
+        public bool IsStarred { get; set; }
     }
 }

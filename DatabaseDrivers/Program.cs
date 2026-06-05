@@ -17,6 +17,8 @@ using TodoApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var keyVaultUrl = builder.Configuration["KeyVault:Url"];
+
 // JWT Authentication Configuration
 var jwtKey = builder.Configuration["Jwt:Key"];
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
@@ -83,8 +85,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
          };
      });
 builder.Services.AddAuthorization();
-
-var keyVaultUrl = builder.Configuration["KeyVault:Url"];
 
 var useKeyVault =
     !builder.Environment.IsDevelopment() &&

@@ -80,6 +80,9 @@ namespace TodoApi.Services
                 {
                     Id = t.Id,
                     Title = t.Title,
+                    Description = t.Description,
+                    DueDate = t.DueDate,
+                    IsStarred = t.IsStarred,
                     IsDone = t.IsDone,
                     UserId = t.UserId
                 })
@@ -163,6 +166,9 @@ namespace TodoApi.Services
             {
                 Id = todo.Id,
                 Title = todo.Title,
+                Description = todo.Description,
+                DueDate = todo.DueDate,
+                IsStarred = todo.IsStarred,
                 IsDone = todo.IsDone,
                 UserId = todo.UserId
             };
@@ -177,6 +183,8 @@ namespace TodoApi.Services
             var todo = new Todo
             {
                 Title = dto.Title,
+                Description = dto.Description,
+                DueDate = dto.DueDate,
                 IsDone = false,
                 UserId = userId // Set from the JWT userId
             };
@@ -188,6 +196,8 @@ namespace TodoApi.Services
             {
                 Id = todo.Id,
                 Title = todo.Title,
+                Description = todo.Description,
+                DueDate = todo.DueDate,
                 IsDone = todo.IsDone,
                 UserId = todo.UserId
             };
@@ -205,6 +215,9 @@ namespace TodoApi.Services
 
             todo.Title = updateTodoDto.Title;
             todo.IsDone = updateTodoDto.IsDone;
+            todo.Description = updateTodoDto.Description;
+            todo.DueDate = updateTodoDto.DueDate;
+            todo.IsStarred = updateTodoDto.IsStarred;
 
             await _context.SaveChangesAsync();
 

@@ -7,5 +7,7 @@ namespace TodoApi.DTOs
         [Required]
         [StringLength(100)]
         public required string Title { get; set; }
+        public string? Description { get; set; } = null;
+        public string? DueDate { get; set; } = null;
     }
 }

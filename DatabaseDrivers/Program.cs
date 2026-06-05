@@ -17,15 +17,6 @@ using TodoApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var keyVaultUrl = builder.Configuration["KeyVault:Url"];
-
-if(!builder.Environment.IsDevelopment() && !string.IsNullOrWhiteSpace(keyVaultUrl))
-{
-    builder.Configuration.AddAzureKeyVault(
-        new Uri(keyVaultUrl),
-        new DefaultAzureCredential());
-}
-
 // JWT Authentication Configuration
 var jwtKey = builder.Configuration["Jwt:Key"];
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
@@ -93,22 +84,29 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
      });
 builder.Services.AddAuthorization();
 
-builder.Services.AddSingleton<SecretClient>(serviceProvider =>
+var keyVaultUrl = builder.Configuration["KeyVault:Url"];
+
+var useKeyVault =
+    !builder.Environment.IsDevelopment() &&
+    !builder.Environment.IsEnvironment("Testing");
+
+if (useKeyVault)
 {
-    var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-
-    var keyVaultUrl = configuration["KeyVault:Url"];
-
     if (string.IsNullOrWhiteSpace(keyVaultUrl))
     {
         throw new InvalidOperationException("KeyVault:Url is missing.");
     }
 
-    return new SecretClient(
+    builder.Configuration.AddAzureKeyVault(
         new Uri(keyVaultUrl),
-        new DefaultAzureCredential()
-    );
-});
+        new DefaultAzureCredential());
+
+    builder.Services.AddSingleton<SecretClient>(_ =>
+        new SecretClient(
+            new Uri(keyVaultUrl),
+            new DefaultAzureCredential()
+        ));
+}
 
 // API Versioning Configuration
 builder.Services.AddApiVersioning(options =>

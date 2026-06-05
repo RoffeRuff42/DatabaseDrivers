@@ -1,4 +1,4 @@
-﻿namespace TodoApi.Extensions
+﻿namespace UserApi.Extensions
 {
     public static class CorsExtensions
     {
@@ -9,10 +9,11 @@
                 // Policy for production
                 options.AddPolicy("ProductionPolicy", policy =>
                 {
-                    policy.WithOrigins("https://grahnnen.github.io")
-                          .AllowAnyMethod()
-                          .AllowAnyHeader(); 
-                });
+                        policy.WithOrigins("https://grahnnen.github.io")
+                              .AllowAnyMethod()   
+                              .AllowAnyHeader();
+
+                    });
 
                 // Policy for development
                 options.AddPolicy("DevelopmentPolicy", policy =>
@@ -20,8 +21,8 @@
                     policy.WithOrigins(
                            "http://localhost:5500",
                            "http://127.0.0.1:5500")
-                          .AllowAnyMethod()  
-                          .AllowAnyHeader();  
+                          .AllowAnyMethod()   
+                          .AllowAnyHeader();
 
                 });
             });

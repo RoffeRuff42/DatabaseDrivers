@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
 using System.Text;
+using UserApi.Extensions;
 using UserApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,7 +21,11 @@ builder.Host.UseDefaultServiceProvider((context, options) =>
 // JWT Authentication Configuration
 var jwtKey = builder.Configuration["Jwt:Key"];
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+Console.WriteLine($"DEBUG: Den issuer som faktiskt läses in är: '{jwtIssuer}'");
 var jwtAudience = builder.Configuration["Jwt:Audience"];
+
+if (string.IsNullOrEmpty(jwtKey))
+    throw new InvalidOperationException("JWT token is missing.");
 
 // Add services to the container.
 
@@ -59,6 +64,7 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
+builder.Services.AddCustomCors(builder.Configuration);
 
 //Ratelimiting
 builder.Services.AddRateLimiter(options =>
@@ -117,7 +123,7 @@ else
     app.UseCors("ProductionPolicy");
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.UseRateLimiter();
 

@@ -36,7 +36,7 @@ namespace UserApi.Controllers
             }
 
             // Return the JWT token
-            return Ok(new { Token = token });
+            return Ok(new { token = token });
         }
     }
 }
